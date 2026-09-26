@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#1b1017" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Velvet Hour — Mak's After-Hours Life Sim</title>
+<style>
+  :root{
+    --bg:#130d12; --panel:#21141d; --panel2:#2b1b26; --ink:#f7edf4; --muted:#c6aebc;
+    --burg:#7b274a; --burg2:#a83f67; --silver:#d7d9e0; --coffee:#6b4a3a; --gold:#d5ad6d;
+    --green:#5d8a72; --danger:#d46f7c; --line:#493144; --shadow:0 18px 50px rgba(0,0,0,.28);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:radial-gradient(circle at 10% -10%,#3a1d2d 0,#160f15 35%,#100b10 100%);color:var(--ink);font-family:Inter, ui-sans-serif, system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  body{padding-bottom:92px}
+  button,input,select{font:inherit}
+  button{cursor:pointer}
+  .app{max-width:1180px;margin:0 auto;padding:18px 18px 30px}
+  .topbar{display:flex;gap:14px;justify-content:space-between;align-items:flex-start;position:sticky;top:0;z-index:20;padding:12px 0;background:linear-gradient(180deg,rgba(19,13,18,.98),rgba(19,13,18,.86),rgba(19,13,18,0));backdrop-filter:blur(10px)}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:48px;height:48px;border-radius:16px;background:linear-gradient(145deg,#a83f67,#5b203f);display:grid;place-items:center;box-shadow:0 10px 30px rgba(168,63,103,.25);font-size:24px;border:1px solid rgba(255,255,255,.12)}
+  h1{font-size:22px;margin:0;letter-spacing:.2px}.subtitle{color:var(--muted);font-size:13px;margin-top:2px}
+  .resources{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .pill{background:rgba(43,27,38,.9);border:1px solid var(--line);padding:8px 10px;border-radius:999px;font-size:13px;white-space:nowrap}
+  .pill strong{color:#fff}
+  .hero{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(123,39,74,.34),rgba(107,74,58,.18) 55%,rgba(215,217,224,.07));border:1px solid var(--line);border-radius:24px;padding:22px;box-shadow:var(--shadow);margin-top:8px}
+  .hero:after{content:"";position:absolute;right:-60px;top:-60px;width:230px;height:230px;background:radial-gradient(circle,#a83f6755 0 8%,transparent 9% 20%,#d5ad6d22 21% 27%,transparent 28% 100%);transform:rotate(12deg)}
+  .hero h2{margin:0 0 8px;font-size:28px;max-width:720px}.hero p{margin:0;color:#dbc9d4;max-width:760px;line-height:1.5}
+  .hero-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .btn{border:none;background:linear-gradient(180deg,#a34469,#7b274a);color:#fff;padding:11px 14px;border-radius:12px;font-weight:750;box-shadow:0 8px 20px rgba(123,39,74,.25)}
+  .btn:hover{filter:brightness(1.07)} .btn:disabled{opacity:.42;cursor:not-allowed;filter:none}
+  .btn.secondary{background:#2f202b;border:1px solid #5a3b51;box-shadow:none;color:#f4e8ef}.btn.ghost{background:transparent;border:1px solid var(--line);box-shadow:none;color:var(--muted)}
+  .tabs{display:flex;gap:8px;overflow:auto;padding:14px 0 4px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto;border:1px solid var(--line);color:var(--muted);background:#21151e;padding:10px 13px;border-radius:12px;font-weight:700}
+  .tab.active{background:#6d2848;color:white;border-color:#9b3c63}
+  .view{display:none;margin-top:14px}.view.active{display:block}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.span-4{grid-column:span 4}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-7{grid-column:span 7}.span-8{grid-column:span 8}.span-12{grid-column:span 12}
+  .card{background:linear-gradient(180deg,rgba(43,27,38,.96),rgba(31,20,29,.96));border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 12px 34px rgba(0,0,0,.14)}
+  .card h3{margin:0 0 10px;font-size:17px}.card h4{margin:0 0 7px;font-size:14px}.muted{color:var(--muted)}.tiny{font-size:12px}.small{font-size:13px}
+  .statrow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.stat{background:#1d131b;border:1px solid #45303f;border-radius:12px;padding:10px}.stat b{display:block;font-size:18px}.stat span{font-size:11px;color:var(--muted)}
+  .bar{height:9px;background:#160f15;border-radius:999px;overflow:hidden;border:1px solid #3a2935;margin-top:6px}.bar>i{display:block;height:100%;background:linear-gradient(90deg,#7d2b4d,#c85a80);width:50%}
+  .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.action{border:1px solid #4f3547;background:#241722;border-radius:14px;padding:12px;text-align:left;color:var(--ink);min-height:88px;transition:.15s transform,.15s border-color}.action:hover{transform:translateY(-2px);border-color:#8c4666}.action .emoji{font-size:23px}.action b{display:block;margin-top:5px}.action small{color:var(--muted);display:block;line-height:1.35;margin-top:3px}
+  .feed{display:flex;flex-direction:column;gap:8px;max-height:380px;overflow:auto}.feed-item{padding:10px 11px;border:1px solid #3e2a38;background:#1b1119;border-radius:12px;font-size:13px;line-height:1.4}.feed-item .time{color:#9c7f90;font-size:11px}
+  .quest{padding:11px;border:1px solid #493344;border-radius:12px;margin-bottom:9px;background:#1b1219}.quest.done{opacity:.7;border-color:#4f6d5b}.quest .qtop{display:flex;justify-content:space-between;gap:10px}.tag{font-size:11px;border:1px solid #5a3d50;border-radius:999px;padding:3px 7px;color:#ccb3c1}
+  .inventory{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.item{background:#1c1219;border:1px solid #45303f;border-radius:14px;padding:12px;position:relative}.item .rarity{position:absolute;top:8px;right:8px;font-size:10px;color:#d8b877}.item .big{font-size:25px}.item b{display:block;margin:4px 0}.item small{color:var(--muted)}
+  .shopgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.shopitem{background:#1b1219;border:1px solid #4a3242;border-radius:14px;padding:12px}.price{color:#f0c882;font-weight:800}.shopitem button{width:100%;margin-top:10px}
+  .notes{display:flex;gap:7px;flex-wrap:wrap}.note{border:1px solid #57394d;background:#1d131b;padding:7px 9px;border-radius:999px;font-size:12px}.note.selected{background:#7b274a;color:white;border-color:#b14c72}.note.locked{opacity:.35}
+  .recipe{border:1px solid #493143;border-radius:13px;padding:10px;background:#1b1219;margin-top:9px}.recipe .combo{color:#bd9eae;font-size:12px}
+  .storybox{background:linear-gradient(180deg,#1b1119,#161016);border:1px solid #493142;border-radius:16px;padding:16px;min-height:260px}.storybox h3{font-family:Georgia,serif;font-size:22px}.storytext{font-family:Georgia,serif;line-height:1.65;color:#e7dbe2}.choices{display:grid;gap:9px;margin-top:14px}.choice{background:#271824;border:1px solid #593a50;border-radius:12px;padding:10px;color:white;text-align:left}.choice:hover{border-color:#aa4f74}.meters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}.meter{font-size:12px;background:#1b1219;border:1px solid #45303f;padding:6px 9px;border-radius:999px}
+  .modal{position:fixed;inset:0;background:rgba(6,4,6,.72);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:100;padding:18px}.modal.show{display:flex}.modalbox{width:min(560px,100%);max-height:88vh;overflow:auto;background:#251720;border:1px solid #6d455e;border-radius:20px;padding:18px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  .modalbox h2{margin:0 0 8px}.modalbox .close{float:right;background:transparent;border:none;color:#bfa6b6;font-size:22px}
+  .toast{position:fixed;left:50%;bottom:94px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:#eadce5;color:#24131d;padding:10px 14px;border-radius:999px;font-weight:700;z-index:120;transition:.22s;box-shadow:0 10px 30px rgba(0,0,0,.28);max-width:90%;text-align:center}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .nav{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);width:min(760px,calc(100% - 20px));background:rgba(29,18,27,.94);backdrop-filter:blur(16px);border:1px solid #52374a;border-radius:18px;padding:8px;display:flex;gap:7px;z-index:40;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+  .nav button{flex:1;background:transparent;border:none;color:#bda8b5;border-radius:12px;padding:9px 4px;font-size:11px;font-weight:700}.nav button span{display:block;font-size:18px}.nav button.active{background:#672743;color:white}
+  .divider{height:1px;background:#493144;margin:12px 0}.right{float:right}.center{text-align:center}.leopard{position:relative;overflow:hidden}.leopard:before{content:"";position:absolute;inset:0;opacity:.1;background-image:radial-gradient(ellipse at center,#d5ad6d 0 18%,transparent 20%),radial-gradient(ellipse at center,#d5ad6d 0 18%,transparent 20%);background-size:42px 32px,48px 38px;background-position:0 0,22px 16px;transform:rotate(-5deg);pointer-events:none}
+  .collection-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+  .badge{display:inline-block;padding:4px 7px;border-radius:7px;background:#3b2433;color:#eadbe4;font-size:11px;margin-right:4px;margin-top:4px}
+  .kbd{font-family:ui-monospace,monospace;border:1px solid #594052;background:#1a1118;border-radius:6px;padding:2px 5px}
+  .footer{color:#8f7383;text-align:center;font-size:11px;margin:26px 0 6px}
+  @media(max-width:860px){.span-4,.span-5,.span-6,.span-7,.span-8{grid-column:span 12}.shopgrid{grid-template-columns:1fr 1fr}.topbar{align-items:flex-start}.resources{max-width:46%}.hero h2{font-size:24px}}
+  @media(max-width:520px){.app{padding:12px 12px 26px}.brand .subtitle{display:none}.logo{width:42px;height:42px}.resources{max-width:52%;gap:5px}.pill{padding:6px 8px;font-size:11px}.hero{padding:17px;border-radius:19px}.hero h2{font-size:21px}.actions,.shopgrid{grid-template-columns:1fr}.statrow{grid-template-columns:1fr 1fr}.nav button{font-size:9px}.nav button span{font-size:17px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="logo">✦</div><div><h1>Velvet Hour</h1><div class="subtitle">Mak's after-hours life sim • dark Y2K cozy chaos</div></div></div>
+    <div class="resources">
+      <div class="pill">🪙 <strong id="coins">0</strong></div><div class="pill">⚡ <strong id="energy">0</strong>/<span id="maxEnergy">0</span></div><div class="pill">🌙 Day <strong id="day">1</strong></div>
+    </div>
+  </div>
+
+  <section class="hero leopard" id="hero">
+    <h2 id="greeting">Welcome to your Velvet Hour, Mak.</h2>
+    <p id="heroText">Build a life that feels expensive even when it absolutely is not: collect perfume notes, thrift weird little treasures, level up your skills, survive random pet chaos, bake things, read an enemies-to-lovers story, and slowly turn your after-hours world into something unmistakably yours.</p>
+    <div class="hero-row"><button class="btn" id="primaryHero">Start tonight</button><button class="btn secondary" id="sleepBtn">🌙 End day</button></div>
+  </section>
+
+  <div class="tabs" id="tabs"></div>
+
+  <main>
+    <section class="view active" data-view="home">
+      <div class="grid">
+        <div class="card span-7">
+          <h3>✨ Tonight's moves</h3><div class="actions" id="homeActions"></div>
+        </div>
+        <div class="card span-5">
+          <h3>📌 Daily quests</h3><div id="quests"></div>
+        </div>
+        <div class="card span-7">
+          <h3>🧠 Your stats</h3><div class="statrow" id="stats"></div>
+          <div class="divider"></div><div class="small muted" id="levelInfo"></div>
+        </div>
+        <div class="card span-5">
+          <h3>🗞️ Tiny life feed</h3><div class="feed" id="feed"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" data-view="town">
+      <div class="grid">
+        <div class="card span-12"><h3>🛍️ The Night Strip</h3><p class="muted small">Every shop rerolls when you visit. Some finds are common. Some are aggressively specific. Rare pieces improve your Vibe Score and occasionally unlock passive bonuses.</p><div class="actions" id="townActions"></div></div>
+        <div class="card span-12"><div class="collection-head"><h3>Current finds</h3><button class="btn ghost" onclick="rerollShop(true)">↻ Refresh for 8 🪙</button></div><div class="shopgrid" id="shop"></div></div>
+      </div>
+    </section>
+
+    <section class="view" data-view="perfume">
+      <div class="grid">
+        <div class="card span-7"><h3>🧪 Perfume Lab</h3><p class="muted small">Pick exactly 3 notes. Known combinations unlock signature scents; everything else becomes a one-off custom blend. Some combinations are weird. That is between you and the beaker.</p><div class="notes" id="notePicker"></div><div class="hero-row"><button class="btn" onclick="craftPerfume()">Blend perfume • 12 🪙</button><button class="btn secondary" onclick="scentChallenge()">Play Scent Match • +rewards</button></div><div id="blendHint" class="small muted" style="margin-top:10px"></div></div>
+        <div class="card span-5"><h3>📓 Formula notebook</h3><div id="recipes"></div></div>
+        <div class="card span-12"><div class="collection-head"><h3>✨ Your fragrance shelf</h3><span class="tag" id="perfumeCount"></span></div><div class="inventory" id="perfumeShelf"></div></div>
+      </div>
+    </section>
+
+    <section class="view" data-view="story">
+      <div class="grid"><div class="card span-8"><div class="meters"><span class="meter">🔥 Spark: <b id="spark">0</b></span><span class="meter">⚔️ Rivalry: <b id="rivalry">0</b></span><span class="meter">📚 Insight: <b id="insight">0</b></span></div><div class="storybox" id="storyBox"></div></div><div class="card span-4"><h3>📖 Ink & Ashes</h3><p class="muted small">A miniature fantasy-romance campaign about two rival archivists competing for a magical manuscript that absolutely does not want to be found.</p><div class="divider"></div><div id="storyLog" class="small"></div><div class="hero-row"><button class="btn ghost" onclick="restartStory()">Restart story</button></div></div></div>
+    </section>
+
+    <section class="view" data-view="collection">
+      <div class="grid">
+        <div class="card span-4"><h3>💿 Vibe Score</h3><div style="font-size:48px;font-weight:900" id="vibeScore">0</div><p class="muted small">Driven by rare finds, completed collections, crafted perfume, story endings, and your equipped favorites.</p><div class="bar"><i id="vibeBar"></i></div></div>
+        <div class="card span-8"><h3>🏆 Achievements</h3><div class="inventory" id="achievements"></div></div>
+        <div class="card span-12"><h3>👜 Closet + curios</h3><div class="inventory" id="inventory"></div></div>
+      </div>
+    </section>
+
+    <section class="view" data-view="settings">
+      <div class="grid"><div class="card span-6"><h3>💾 Save room</h3><p class="muted small">Progress saves automatically in this browser. You can also export a backup if you want to move devices or keep a copy.</p><div class="hero-row"><button class="btn secondary" onclick="exportSave()">Export save</button><button class="btn secondary" onclick="document.getElementById('importFile').click()">Import save</button><input type="file" id="importFile" accept="application/json" hidden></div></div><div class="card span-6"><h3>🧨 Dangerous little button</h3><p class="muted small">Reset wipes the local save and restarts from Day 1.</p><button class="btn ghost" onclick="resetGame()">Reset game</button></div><div class="card span-12"><h3>📱 Make it feel like an app</h3><p class="muted small">On iPhone/iPad: open this file/page in Safari → Share → <b>Add to Home Screen</b>. It is designed to work like a little phone game and keeps your progress in browser storage.</p></div></div>
+    </section>
+  </main>
+  <div class="footer">VELVET HOUR • no ads, no microtransactions, only suspicious amounts of vanilla</div>
+</div>
+
+<div class="nav" id="nav"></div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="modalbox"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
+
+<script>
+const SAVE_KEY='velvetHourMak_v1';
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const titleCase=s=>s.replace(/\b\w/g,m=>m.toUpperCase());
+
+const NOTE_DATA={
+  Vanilla:'🍦', Marshmallow:'☁️', Pear:'🍐', Jasmine:'🌼', Amber:'🟠', Sandalwood:'🪵', Cherry:'🍒', Coffee:'☕', Tonka:'🫘', Coconut:'🥥', Neroli:'🌿', Patchouli:'🍂', Caramel:'🍮', Rose:'🌹', Musk:'🫧', Bergamot:'🍋'
+};
+const RECIPES=[
+ {name:'Vanilla Static',notes:['Vanilla','Marshmallow','Musk'],desc:'fluffy, clean, sugary — like a silver flip phone with lip gloss on it',rarity:'Rare'},
+ {name:'Burgundy Kiss',notes:['Cherry','Rose','Amber'],desc:'dark cherry lipstick, velvet booth, very questionable eye contact',rarity:'Rare'},
+ {name:'Midnight Library',notes:['Coffee','Vanilla','Sandalwood'],desc:'paperbacks, espresso, sweater sleeves and bad decisions',rarity:'Epic'},
+ {name:'Electric Orchard',notes:['Pear','Bergamot','Musk'],desc:'bright pear and clean skin with a little snap of citrus',rarity:'Rare'},
+ {name:'Silver Bloom',notes:['Jasmine','Neroli','Musk'],desc:'white florals with cold silver air',rarity:'Epic'},
+ {name:'Caffeinated Crush',notes:['Coffee','Caramel','Tonka'],desc:'sweet coffee, toasted warmth, zero emotional restraint',rarity:'Epic'},
+ {name:'Velvet Picnic',notes:['Coconut','Vanilla','Pear'],desc:'creamy fruit, soft sunlight, suspiciously pretty blanket',rarity:'Rare'},
+ {name:'Afterglow',notes:['Amber','Vanilla','Patchouli'],desc:'warm resin, skin, and the last hour of a good night',rarity:'Legendary'}
+];
+const SHOP_ITEMS=[
+ {name:'Coffee Brown Dunks',type:'Closet',emoji:'👟',rarity:'Rare',price:34,vibe:12},
+ {name:'Leopard Shoulder Bag',type:'Closet',emoji:'👜',rarity:'Epic',price:42,vibe:18},
+ {name:'Burgundy Baby Tee',type:'Closet',emoji:'👚',rarity:'Rare',price:27,vibe:10},
+ {name:'Silver Mini Mirror',type:'Decor',emoji:'🪞',rarity:'Common',price:15,vibe:5},
+ {name:'Tiny Chrome Lamp',type:'Decor',emoji:'💡',rarity:'Rare',price:29,vibe:11},
+ {name:'Thrifted Black Loafers',type:'Closet',emoji:'🥿',rarity:'Epic',price:38,vibe:16},
+ {name:'Vintage Leopard Tray',type:'Decor',emoji:'🐆',rarity:'Epic',price:36,vibe:17},
+ {name:'Burgundy Throw Blanket',type:'Decor',emoji:'🧣',rarity:'Rare',price:24,vibe:10},
+ {name:'Silver Star Hair Clips',type:'Closet',emoji:'⭐',rarity:'Common',price:11,vibe:4},
+ {name:'Mini Vanilla Candle (Decor Only)',type:'Decor',emoji:'🕯️',rarity:'Common',price:13,vibe:5},
+ {name:'Black Flare Jeans',type:'Closet',emoji:'👖',rarity:'Rare',price:31,vibe:12},
+ {name:'Brown Cherry Charm',type:'Curio',emoji:'🍒',rarity:'Rare',price:18,vibe:8},
+ {name:'Old Romance Paperback',type:'Book',emoji:'📕',rarity:'Common',price:9,vibe:3},
+ {name:'Foil-Stamped Fantasy Novel',type:'Book',emoji:'📚',rarity:'Epic',price:30,vibe:14},
+ {name:'Cow Print Trinket Box',type:'Curio',emoji:'🐄',rarity:'Rare',price:20,vibe:8},
+ {name:'2000s Glitter Frame',type:'Decor',emoji:'🖼️',rarity:'Rare',price:21,vibe:9},
+ {name:'Mystery Perfume Mini',type:'Curio',emoji:'🧴',rarity:'Legendary',price:48,vibe:24},
+ {name:'Chunky Silver Ring',type:'Closet',emoji:'💍',rarity:'Epic',price:35,vibe:15},
+ {name:'Soft Brown Zip Hoodie',type:'Closet',emoji:'🤎',rarity:'Common',price:22,vibe:6},
+ {name:'Leopard Mouse Pad',type:'Decor',emoji:'🖱️',rarity:'Rare',price:17,vibe:8},
+ {name:'Mini Glass Cake Stand',type:'Curio',emoji:'🍰',rarity:'Rare',price:19,vibe:8},
+ {name:'Starry Book Light',type:'Book',emoji:'🔦',rarity:'Common',price:14,vibe:4},
+];
+const HOME_ACTIONS=[
+ {id:'skincare',emoji:'🧴',name:'Do the unnecessarily satisfying skincare routine',desc:'+confidence, +knowledge • 1 energy',cost:1,coin:0,stats:{confidence:2,knowledge:1},tag:'selfcare'},
+ {id:'tidy',emoji:'🧺',name:'Reset one tiny area',desc:'+discipline, sometimes find coins • 1 energy',cost:1,coin:[2,9],stats:{discipline:2},tag:'tidy'},
+ {id:'game',emoji:'🎮',name:'Disappear into a cozy game',desc:'+creativity, +mood • 1 energy',cost:1,coin:0,stats:{creativity:2},tag:'game'},
+ {id:'bake',emoji:'🧁',name:'Bake something slightly excessive',desc:'+creativity, +coins • 2 energy',cost:2,coin:[6,15],stats:{creativity:3,knowledge:1},tag:'bake'},
+ {id:'read',emoji:'📖',name:'Read “just one chapter”',desc:'+knowledge, +curiosity • 1 energy',cost:1,coin:0,stats:{knowledge:2,curiosity:2},tag:'read'},
+ {id:'piano',emoji:'🎹',name:'Practice piano for 20 minutes',desc:'+discipline, +creativity • 1 energy',cost:1,coin:0,stats:{discipline:2,creativity:1},tag:'piano'}
+];
+const TOWN_ACTIONS=[
+ {id:'thrift',emoji:'🧥',name:'Hit the thrift store',desc:'Reroll shop + chance of rare piece • 1 energy'},
+ {id:'discount',emoji:'🛒',name:'Wander the discount aisles',desc:'Earn a coupon or weird curio • 1 energy'},
+ {id:'bookstore',emoji:'📚',name:'Browse the bookstore',desc:'Knowledge + story currency • 1 energy'},
+ {id:'coffee',emoji:'☕',name:'Get a little treat',desc:'Restore 1 energy once per day • 6 coins'}
+];
+const ACHIEVEMENTS=[
+ {id:'firstbuy',name:'Little Treat Doctrine',emoji:'🛍️',desc:'Buy your first shop item.'},
+ {id:'firstperfume',name:'Nose With Opinions',emoji:'👃',desc:'Blend your first perfume.'},
+ {id:'signature',name:'Signature Behavior',emoji:'🧴',desc:'Discover a named fragrance formula.'},
+ {id:'collector10',name:'Tiny Hoard, Respectfully',emoji:'👜',desc:'Own 10 non-perfume collectibles.'},
+ {id:'vibe100',name:'The Vibe Has Become Structural',emoji:'💿',desc:'Reach 100 Vibe Score.'},
+ {id:'storyend',name:'Enemies? Allegedly.',emoji:'📕',desc:'Finish Ink & Ashes.'},
+ {id:'day7',name:'One Week In',emoji:'🌙',desc:'Reach Day 7.'},
+ {id:'day30',name:'Main Character Residency',emoji:'🏙️',desc:'Reach Day 30.'},
+ {id:'rich',name:'Financially Questionable But Liquid',emoji:'🪙',desc:'Hold 250 coins at once.'},
+ {id:'allrecipes',name:'Perfume Gremlin Supreme',emoji:'✨',desc:'Discover all 8 signature fragrances.'}
+];
+const RANDOM_EVENTS=[
+ ()=>({title:'🐕 Oakley has opinions',text:'Oakley interrupts your plans with an urgent request to inspect a completely normal sound.',coins:0,energy:0,stat:['confidence',1]}),
+ ()=>({title:'📦 Surprise package energy',text:'You forgot something was arriving. Past You briefly feels like a benefactor.',coins:rand(2,8),energy:0}),
+ ()=>({title:'🧠 Hyperfixation unlocked',text:'You look up one tiny thing and accidentally learn twelve related things.',coins:0,energy:-1,stat:['knowledge',3]}),
+ ()=>({title:'🐈 Cat jurisdiction',text:'A cat sits directly where you need to put something. The law is clear; you wait.',coins:0,energy:0,stat:['discipline',1]}),
+ ()=>({title:'💸 Coupon victory',text:'The universe hands you a discount at exactly the right moment.',coins:10,energy:0}),
+ ()=>({title:'🍫 Snack tax',text:'A suspiciously good snack restores morale.',coins:-2,energy:1,stat:['confidence',1]}),
+ ()=>({title:'🎧 Perfect-song moment',text:'The exact right song comes on and suddenly the whole evening has cinematography.',coins:0,energy:1,stat:['creativity',2]})
+];
+
+const defaultState=()=>({
+  day:1,coins:70,energy:8,maxEnergy:8,level:1,xp:0,
+  stats:{confidence:2,curiosity:2,discipline:2,creativity:2,knowledge:2},
+  inventory:[],perfumes:[],notes:['Vanilla','Marshmallow','Pear','Jasmine','Amber','Musk'],recipes:[],
+  shop:[],feed:[{day:1,text:'Velvet Hour unlocked. Your evening is officially a game now.'}],
+  quests:[],questProgress:{},achievements:[],selectedNotes:[],
+  story:{node:'start',spark:0,rivalry:0,insight:0,choices:[],finished:false,ending:null},
+  flags:{coffeeDay:0,storyTokens:0,started:false}, lifetime:{actions:0,spent:0,earned:0,crafted:0,bought:0},
+  lastView:'home'
+});
+let S=load();
+
+function load(){try{return Object.assign(defaultState(),JSON.parse(localStorage.getItem(SAVE_KEY)||'{}'));}catch(e){return defaultState()}}
+function save(){localStorage.setItem(SAVE_KEY,JSON.stringify(S));}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove('show'),1900)}
+function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function addFeed(text){S.feed.unshift({day:S.day,text});S.feed=S.feed.slice(0,35)}
+function earn(n){S.coins+=n; if(n>0)S.lifetime.earned+=n;}
+function spend(n){if(S.coins<n)return false;S.coins-=n;S.lifetime.spent+=n;return true}
+function gainStat(stat,n){S.stats[stat]=(S.stats[stat]||0)+n;gainXP(n*4)}
+function gainXP(n){S.xp+=n;while(S.xp>=S.level*60){S.xp-=S.level*60;S.level++;S.maxEnergy++;S.energy=S.maxEnergy;addFeed(`Level ${S.level}! Max energy increased.`);toast(`✨ Level ${S.level}! +1 max energy`)}}
+function useEnergy(n){if(S.energy<n){toast('You are out of energy. End the day or grab coffee.');return false}S.energy-=n;return true}
+function maybeEvent(chance=.26){if(Math.random()>chance)return;const e=pick(RANDOM_EVENTS)();earn(e.coins||0);S.energy=clamp(S.energy+(e.energy||0),0,S.maxEnergy);if(e.stat)gainStat(e.stat[0],e.stat[1]);addFeed(`${e.title} — ${e.text}`);openModal(`<h2>${e.title}</h2><p class="muted">${e.text}</p>${e.coins?`<p><b>${e.coins>0?'+':''}${e.coins} coins</b></p>`:''}${e.energy?`<p><b>${e.energy>0?'+':''}${e.energy} energy</b></p>`:''}<button class="btn" onclick="closeModal()">Carry on</button>`)}
+
+function makeQuests(){
+ const pool=[
+  {id:'q_action3',name:'Do 3 actions',goal:3,key:'actions',reward:18},
+  {id:'q_spend25',name:'Spend 25 coins',goal:25,key:'spent',reward:20},
+  {id:'q_perfume1',name:'Blend 1 perfume',goal:1,key:'crafted',reward:22},
+  {id:'q_buy1',name:'Buy 1 find',goal:1,key:'bought',reward:16},
+  {id:'q_story1',name:'Make 1 story choice',goal:1,key:'story',reward:14},
+  {id:'q_skill5',name:'Gain 5 total stat points',goal:5,key:'skill',reward:18}
+ ];
+ S.quests=[...pool].sort(()=>Math.random()-.5).slice(0,3).map(q=>({...q,progress:0,claimed:false}));
+ S.questProgress={actions:0,spent:0,crafted:0,bought:0,story:0,skill:0};
+}
+function progress(key,n=1){S.questProgress[key]=(S.questProgress[key]||0)+n;S.quests.forEach(q=>{if(q.key===key&&!q.claimed)q.progress=clamp(S.questProgress[key],0,q.goal)});}
+function claimQuest(i){const q=S.quests[i];if(q.progress<q.goal||q.claimed)return;q.claimed=true;earn(q.reward);gainXP(10);addFeed(`Quest complete: ${q.name} (+${q.reward} coins).`);toast(`Quest cleared! +${q.reward} 🪙`);save();render()}
+
+function doHome(id){const a=HOME_ACTIONS.find(x=>x.id===id);if(!useEnergy(a.cost))return;S.lifetime.actions++;progress('actions');progress('skill',Object.values(a.stats).reduce((x,y)=>x+y,0));Object.entries(a.stats).forEach(([k,v])=>gainStat(k,v));let c=Array.isArray(a.coin)?rand(a.coin[0],a.coin[1]):a.coin;if(c)earn(c);const lines={
+ skincare:'Skin glossy, soul marginally more organized.',tidy:'One little zone is reset. You resist the urge to turn it into a six-hour project.',game:'You disappear into pixels and return with slightly better morale.',bake:'The kitchen smells unfairly good. You briefly consider opening a bakery.',read:'You meant one chapter. The book disagreed.',piano:'Twenty minutes counts. Tiny reps are still reps.'};addFeed(`${a.emoji} ${lines[id]}${c?` (+${c} coins)`:''}`);maybeUnlockNote();maybeEvent();checkAchievements();save();render();}
+
+function maybeUnlockNote(){const locked=Object.keys(NOTE_DATA).filter(n=>!S.notes.includes(n));if(locked.length&&Math.random()<.14){const n=pick(locked);S.notes.push(n);addFeed(`🧪 New perfume note discovered: ${n}.`);toast(`New note: ${NOTE_DATA[n]} ${n}`)}}
+
+function doTown(id){
+ if(id==='coffee'){if(S.flags.coffeeDay===S.day){toast('You already did the coffee energy refill today.');return}if(!spend(6))return toast('Not enough coins for the little treat.');S.energy=clamp(S.energy+1,0,S.maxEnergy);S.flags.coffeeDay=S.day;progress('spent',6);addFeed('☕ Tiny treat acquired. +1 energy.');save();render();return}
+ if(!useEnergy(1))return;S.lifetime.actions++;progress('actions');
+ if(id==='thrift'){gainStat('curiosity',2);progress('skill',2);rerollShop(false);addFeed('🧥 You dig through the racks and find a fresh batch of possibilities.');if(Math.random()<.2){earn(7);addFeed('🪙 Found $7 in a jacket pocket. Morally, the thrift gods gave it to you.')}}
+ if(id==='discount'){gainStat('curiosity',1);gainStat('discipline',1);progress('skill',2);const gift=pick(['Silver hair clips','Mini storage bin','Vanilla lip balm','Oddly cute mug']);S.inventory.push({name:gift,type:'Curio',emoji:pick(['⭐','🧺','💄','☕']),rarity:'Common',vibe:3});addFeed(`🛒 Discount-store victory: ${gift}.`)}
+ if(id==='bookstore'){gainStat('knowledge',2);gainStat('curiosity',1);progress('skill',3);S.flags.storyTokens++;addFeed('📚 You leave with 1 Story Token and seventeen books you mentally added to a list.');}
+ maybeEvent();checkAchievements();save();render();
+}
+
+function rarityWeight(){const r=Math.random();return r<.07?'Legendary':r<.24?'Epic':r<.63?'Rare':'Common'}
+function rerollShop(pay){if(pay&&!spend(8))return toast('Not enough coins to refresh.');if(pay)progress('spent',8);let candidates=[];for(let i=0;i<3;i++){let base=pick(SHOP_ITEMS);let rarity=rarityWeight();let mult={Common:.8,Rare:1,Epic:1.25,Legendary:1.55}[rarity];candidates.push({...base,rarity,price:Math.max(6,Math.round(base.price*mult)),vibe:Math.round(base.vibe*mult),uid:Date.now()+Math.random()});}S.shop=candidates;save();renderShop()}
+function buyShop(i){const item=S.shop[i];if(!item)return;if(!spend(item.price))return toast('Not enough coins. The little treat must wait 😭');progress('spent',item.price);S.inventory.push({...item,uid:Date.now()+Math.random()});S.lifetime.bought++;progress('bought');gainXP(item.vibe);addFeed(`🛍️ Bought ${item.name} (${item.rarity}).`);S.shop.splice(i,1);checkAchievements();save();render();toast(`${item.emoji} ${item.name} acquired`)}
+
+function toggleNote(n){if(!S.notes.includes(n))return;const a=S.selectedNotes;const idx=a.indexOf(n);if(idx>=0)a.splice(idx,1);else if(a.length<3)a.push(n);else toast('Pick exactly 3 notes — remove one first.');renderPerfume()}
+function craftPerfume(){if(S.selectedNotes.length!==3)return toast('Pick exactly 3 notes first.');if(!spend(12))return toast('You need 12 coins to blend.');progress('spent',12);S.lifetime.crafted++;progress('crafted');gainStat('knowledge',2);gainStat('creativity',2);progress('skill',4);const sorted=[...S.selectedNotes].sort().join('|');const recipe=RECIPES.find(r=>[...r.notes].sort().join('|')===sorted);let p;if(recipe){p={name:recipe.name,notes:[...S.selectedNotes],emoji:'🧴',rarity:recipe.rarity,desc:recipe.desc,vibe:{Rare:14,Epic:20,Legendary:30}[recipe.rarity]||10,uid:Date.now()};if(!S.recipes.includes(recipe.name)){S.recipes.push(recipe.name);toast(`✨ Signature formula discovered: ${recipe.name}`)}}else{const adj=pick(['Velvet','Sugared','Electric','Soft','Midnight','Glossy','Warm','Silver','Fuzzy']);const noun=pick(['Cloud','Muse','Static','Crush','No. 8','Afterparty','Daydream','Secret','Bloom']);p={name:`${adj} ${noun}`,notes:[...S.selectedNotes],emoji:'🧪',rarity:'Custom',desc:'a one-off experiment that exists because you said so',vibe:8,uid:Date.now()}}S.perfumes.push(p);S.selectedNotes=[];addFeed(`🧪 Blended ${p.name}: ${p.notes.join(' + ')}.`);gainXP(p.vibe);maybeUnlockNote();checkAchievements();save();render()}
+function scentChallenge(){
+ const unlocked=S.notes;if(unlocked.length<4)return toast('Discover a few more notes first.');const target=pick(unlocked);const options=[target,...unlocked.filter(x=>x!==target).sort(()=>Math.random()-.5).slice(0,3)].sort(()=>Math.random()-.5);openModal(`<h2>👃 Scent Match</h2><p class="muted">A blotter smells like <b>${scentClue(target)}</b>. Which note is it?</p><div class="choices">${options.map(o=>`<button class="choice" onclick="answerScent('${o}','${target}')">${NOTE_DATA[o]} ${o}</button>`).join('')}</div>`)}
+function scentClue(n){const c={Vanilla:'sweet cream and warm sugar',Marshmallow:'powdery fluff and soft sugar',Pear:'juicy green fruit',Jasmine:'lush white petals',Amber:'warm resin and glowing skin',Sandalwood:'smooth creamy wood',Cherry:'dark glossy fruit',Coffee:'roasted bitter warmth',Tonka:'vanilla-like warmth with almondy spice',Coconut:'creamy tropical milk',Neroli:'bright orange blossom',Patchouli:'earthy, dark and woody',Caramel:'burnt sugar and buttery sweetness',Rose:'velvety red petals',Musk:'clean skin and soft laundry',Bergamot:'sparkling citrus peel'};return c[n]||'something mysterious'}
+function answerScent(a,t){closeModal();if(a===t){earn(10);gainStat('knowledge',2);progress('skill',2);toast('Correct! +10 coins');addFeed(`👃 Scent Match nailed: ${t}.`)}else{toast(`Close — it was ${t}.`);addFeed(`👃 Scent Match miss: guessed ${a}, answer was ${t}.`)}save();render()}
+
+const STORY={
+ start:{title:'Chapter I — The Locked Stack',text:`The Midnight Archive closes at eleven. At 11:07, you are still inside — because the manuscript you need for your promotion is supposedly hidden in a sealed wing. Unfortunately, someone else had the same idea. Rowan Vale steps out from behind a shelf, coat dusty, expression intolerably calm. “You’re in my way.”`,choices:[
+  {label:'“Cute. I was about to say the same thing.”',to:'door',spark:1,rivalry:2},
+  {label:'Pretend you are absolutely not startled.',to:'door',insight:1,rivalry:1},
+  {label:'Suggest a temporary truce. Emphasis on temporary.',to:'door',spark:1,insight:1}
+ ]},
+ door:{title:'Chapter II — The Door That Bites',text:`The sealed wing is protected by an enchanted lock. It hisses when Rowan touches it. He looks offended on a personal level. A brass plate reads: ONLY WHAT IS SHARED MAY PASS.`,choices:[
+  {label:'Share an embarrassing secret.',to:'stair',spark:2,insight:1},
+  {label:'Share a useful theory about the lock.',to:'stair',insight:2,rivalry:1},
+  {label:'Make Rowan go first because this was his brilliant plan.',to:'stair',rivalry:2}
+ ]},
+ stair:{title:'Chapter III — Twelve Floors Down',text:`The door opens onto a staircase that should not fit inside the building. Somewhere below, ink-black water drips upward. Halfway down, the step under you disappears. Rowan catches your wrist. For one second, neither of you says anything clever.`,choices:[
+  {label:'“You can let go now.” Do not move your hand.',to:'map',spark:2},
+  {label:'Thank him, sincerely. Horrifying.',to:'map',spark:1,insight:1},
+  {label:'Blame the architecture.',to:'map',rivalry:1,insight:1}
+ ]},
+ map:{title:'Chapter IV — The Liar’s Map',text:`At the bottom, you find a map that rearranges itself whenever either of you lies. Rowan says, “I don’t care who gets the manuscript.” The entire east corridor vanishes. You stare at him. He stares at the map.`,choices:[
+  {label:'Laugh so hard you have to sit down.',to:'chamber',spark:2,rivalry:1},
+  {label:'Admit you care way too much too.',to:'chamber',spark:1,insight:2},
+  {label:'Use the lie to deliberately manipulate the map.',to:'chamber',insight:3}
+ ]},
+ chamber:{title:'Chapter V — The Manuscript',text:`The manuscript is waiting in a glass chamber, bound in burgundy leather with silver corners. The case opens only when two people place a hand on it. Of course it does. As the seal breaks, the book flashes one sentence across the glass: ONE OF YOU WANTS TO WIN. THE OTHER WANTS TO BE CHOSEN.`,choices:[
+  {label:'Ask Rowan which one he thinks he is.',to:'truth',spark:2,insight:1},
+  {label:'Say the book is being dramatic and you respect it.',to:'truth',spark:1,rivalry:1},
+  {label:'Say nothing. Watch his face instead.',to:'truth',insight:2}
+ ]},
+ truth:{title:'Chapter VI — The Part Where This Gets Annoying',text:`Rowan looks at you instead of the manuscript. “I knew you’d be here tonight,” he says. “I could’ve filed the discovery request yesterday.” The realization lands slowly: he did not come because he needed the book.`,choices:[
+  {label:'“That is an incredibly stupid way to ask me out.”',to:'end',spark:3,rivalry:1},
+  {label:'“So you sabotaged your own head start?”',to:'end',spark:1,insight:2},
+  {label:'Kiss him before either of you can make it weirder.',to:'end',spark:4}
+ ]}
+};
+function chooseStory(i){const n=STORY[S.story.node];if(!n||S.story.finished)return;const c=n.choices[i];S.story.spark+=c.spark||0;S.story.rivalry+=c.rivalry||0;S.story.insight+=c.insight||0;S.story.choices.push({node:S.story.node,label:c.label});progress('story');gainXP(8);if(c.to==='end'){finishStory();return}S.story.node=c.to;save();renderStory();renderTop()}
+function finishStory(){S.story.finished=true;let ending;if(S.story.spark>=8)ending='The Obviously-Not-A-Date Ending';else if(S.story.insight>=6)ending='The Co-Conspirators Ending';else ending='The Rivalry Continues Ending';S.story.ending=ending;S.inventory.push({name:`Ink & Ashes: ${ending}`,type:'Book',emoji:'📕',rarity:'Legendary',vibe:28,uid:Date.now()});earn(25);addFeed(`📕 Finished Ink & Ashes — ${ending}. +25 coins.`);checkAchievements();save();render()}
+function restartStory(){S.story={node:'start',spark:0,rivalry:0,insight:0,choices:[],finished:false,ending:null};save();renderStory()}
+
+function sleep(){S.day++;S.energy=S.maxEnergy;earn(8);gainXP(6);makeQuests();rerollShop(false);S.flags.coffeeDay=0;addFeed(`🌙 Day ${S.day} begins. You get an 8-coin daily allowance because this economy is fictional.`);if(S.day%3===0)maybeUnlockNote();checkAchievements();save();render();toast(`Day ${S.day} ✦ energy restored`)}
+function startGame(){S.flags.started=true;if(!S.quests.length)makeQuests();if(!S.shop.length)rerollShop(false);addFeed('✨ You clock out of Real Life and into Velvet Hour.');save();render()}
+
+function calcVibe(){let v=S.inventory.reduce((a,x)=>a+(x.vibe||0),0)+S.perfumes.reduce((a,x)=>a+(x.vibe||0),0)+S.recipes.length*4+S.achievements.length*3+S.level*2;return Math.round(v)}
+function unlock(id){if(!S.achievements.includes(id)){S.achievements.push(id);const a=ACHIEVEMENTS.find(x=>x.id===id);if(a){earn(12);addFeed(`🏆 Achievement: ${a.name}. +12 coins.`);toast(`🏆 ${a.name}`)}}}
+function checkAchievements(){if(S.lifetime.bought>=1)unlock('firstbuy');if(S.lifetime.crafted>=1)unlock('firstperfume');if(S.recipes.length>=1)unlock('signature');if(S.inventory.length>=10)unlock('collector10');if(calcVibe()>=100)unlock('vibe100');if(S.story.finished)unlock('storyend');if(S.day>=7)unlock('day7');if(S.day>=30)unlock('day30');if(S.coins>=250)unlock('rich');if(S.recipes.length>=RECIPES.length)unlock('allrecipes')}
+
+function render(){renderTop();renderTabs();renderHome();renderShop();renderPerfume();renderStory();renderCollection();renderNav();}
+function renderTop(){document.getElementById('coins').textContent=S.coins;document.getElementById('energy').textContent=S.energy;document.getElementById('maxEnergy').textContent=S.maxEnergy;document.getElementById('day').textContent=S.day;document.getElementById('greeting').textContent=S.flags.started?`Day ${S.day}: your after-hours world is waiting.`:'Welcome to your Velvet Hour, Mak.';document.getElementById('heroText').textContent=S.flags.started?`Level ${S.level} • Vibe ${calcVibe()} • ${S.recipes.length}/8 signature fragrances discovered. Spend your energy however you want; there is no “correct” day.`:'A cozy life-sim built around collecting, curiosity, little treats, books, perfume, hobbies, and just enough fake responsibility to make progress satisfying.';document.getElementById('primaryHero').style.display=S.flags.started?'none':'inline-block';document.getElementById('sleepBtn').disabled=!S.flags.started}
+function renderTabs(){const names=[['home','🏠 Home'],['town','🛍️ Town'],['perfume','🧪 Perfume'],['story','📕 Story'],['collection','💿 Collection'],['settings','⚙️ Settings']];document.getElementById('tabs').innerHTML=names.map(([id,l])=>`<button class="tab ${S.lastView===id?'active':''}" onclick="switchView('${id}')">${l}</button>`).join('')}
+function switchView(id){S.lastView=id;save();document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===id));document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',[...document.querySelectorAll('.view')][i]?.dataset.view===id));renderNav();if(id==='story')renderStory()}
+function renderHome(){document.getElementById('homeActions').innerHTML=HOME_ACTIONS.map(a=>`<button class="action" onclick="doHome('${a.id}')" ${!S.flags.started?'disabled':''}><span class="emoji">${a.emoji}</span><b>${a.name}</b><small>${a.desc}</small></button>`).join('');if(!S.quests.length&&S.flags.started)makeQuests();document.getElementById('quests').innerHTML=S.flags.started?S.quests.map((q,i)=>`<div class="quest ${q.claimed?'done':''}"><div class="qtop"><b>${q.name}</b><span class="tag">${q.progress}/${q.goal}</span></div><div class="small muted">Reward: ${q.reward} 🪙</div>${q.progress>=q.goal&&!q.claimed?`<button class="btn" style="margin-top:8px" onclick="claimQuest(${i})">Claim</button>`:''}${q.claimed?`<div class="small" style="margin-top:6px">✓ Claimed</div>`:''}</div>`).join(''):'<p class="muted small">Start the game to generate your first quests.</p>';const stats=[['confidence','💋'],['curiosity','🔎'],['discipline','📌'],['creativity','✨'],['knowledge','🧠']];document.getElementById('stats').innerHTML=stats.map(([k,e])=>`<div class="stat"><b>${e} ${S.stats[k]}</b><span>${titleCase(k)}</span></div>`).join('');document.getElementById('levelInfo').innerHTML=`Level <b>${S.level}</b> • ${S.xp}/${S.level*60} XP to next level • Each level adds +1 max energy.`;document.getElementById('feed').innerHTML=S.feed.map(f=>`<div class="feed-item"><span class="time">Day ${f.day}</span><br>${f.text}</div>`).join('')}
+function renderShop(){if(!S.shop.length&&S.flags.started)rerollShop(false);document.getElementById('shop').innerHTML=S.shop.length?S.shop.map((x,i)=>`<div class="shopitem"><div style="font-size:27px">${x.emoji}</div><b>${x.name}</b><div class="tiny muted">${x.type} • ${x.rarity} • +${x.vibe} vibe</div><div class="price" style="margin-top:7px">${x.price} 🪙</div><button class="btn secondary" onclick="buyShop(${i})">Buy</button></div>`).join(''):'<p class="muted">Visit the thrift store or refresh to find things.</p>';document.getElementById('townActions').innerHTML=TOWN_ACTIONS.map(a=>`<button class="action" onclick="doTown('${a.id}')" ${!S.flags.started?'disabled':''}><span class="emoji">${a.emoji}</span><b>${a.name}</b><small>${a.desc}</small></button>`).join('')}
+function renderPerfume(){document.getElementById('notePicker').innerHTML=Object.keys(NOTE_DATA).map(n=>`<button class="note ${S.selectedNotes.includes(n)?'selected':''} ${S.notes.includes(n)?'':'locked'}" onclick="toggleNote('${n}')">${NOTE_DATA[n]} ${n}${S.notes.includes(n)?'':' 🔒'}</button>`).join('');document.getElementById('blendHint').textContent=S.selectedNotes.length?`Selected: ${S.selectedNotes.join(' + ')}`:'Tip: shop, read, and do daily actions to discover more notes.';document.getElementById('recipes').innerHTML=RECIPES.map(r=>`<div class="recipe"><b>${S.recipes.includes(r.name)?'✓ '+r.name:'???'}</b><div class="combo">${S.recipes.includes(r.name)?r.notes.join(' + '):`${r.rarity} formula — undiscovered`}</div></div>`).join('');document.getElementById('perfumeCount').textContent=`${S.perfumes.length} blends`;document.getElementById('perfumeShelf').innerHTML=S.perfumes.length?S.perfumes.slice().reverse().map(p=>`<div class="item"><span class="rarity">${p.rarity}</span><div class="big">${p.emoji}</div><b>${p.name}</b><small>${p.notes.join(' • ')}</small><div class="tiny muted" style="margin-top:5px">${p.desc}</div></div>`).join(''):'<p class="muted small">No bottles yet. Your shelf is judging you quietly.</p>'}
+function renderStory(){document.getElementById('spark').textContent=S.story.spark;document.getElementById('rivalry').textContent=S.story.rivalry;document.getElementById('insight').textContent=S.story.insight;const b=document.getElementById('storyBox');if(S.story.finished){b.innerHTML=`<h3>✨ ${S.story.ending}</h3><div class="storytext">The manuscript is cataloged under both your names. Rowan claims this is because the discovery was technically shared. The look he gives you says he is very pleased with that technicality.<br><br><b>Ending unlocked.</b> You earned a Legendary book collectible and 25 coins.</div>`}else{const n=STORY[S.story.node];b.innerHTML=`<h3>${n.title}</h3><div class="storytext">${n.text}</div><div class="choices">${n.choices.map((c,i)=>`<button class="choice" onclick="chooseStory(${i})">${c.label}</button>`).join('')}</div>`}const log=S.story.choices.slice(-5).reverse();document.getElementById('storyLog').innerHTML=log.length?log.map(x=>`<div class="feed-item">${x.label}</div>`).join(''):'<span class="muted">Your choices will show up here.</span>'}
+function renderCollection(){const v=calcVibe();document.getElementById('vibeScore').textContent=v;document.getElementById('vibeBar').style.width=`${Math.min(100,v%101)}%`;document.getElementById('achievements').innerHTML=ACHIEVEMENTS.map(a=>`<div class="item" style="opacity:${S.achievements.includes(a.id)?1:.42}"><div class="big">${a.emoji}</div><b>${a.name}</b><small>${a.desc}</small>${S.achievements.includes(a.id)?'<div class="badge">Unlocked</div>':''}</div>`).join('');document.getElementById('inventory').innerHTML=S.inventory.length?S.inventory.slice().reverse().map(x=>`<div class="item"><span class="rarity">${x.rarity}</span><div class="big">${x.emoji}</div><b>${x.name}</b><small>${x.type} • +${x.vibe||0} vibe</small></div>`).join(''):'<p class="muted small">Your collection is empty. This is fixable and, arguably, urgent.</p>'}
+function renderNav(){const nav=[['home','🏠','Home'],['town','🛍️','Town'],['perfume','🧪','Perfume'],['story','📕','Story'],['collection','💿','Stuff']];document.getElementById('nav').innerHTML=nav.map(([id,e,l])=>`<button class="${S.lastView===id?'active':''}" onclick="switchView('${id}')"><span>${e}</span>${l}</button>`).join('')}
+
+function exportSave(){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`velvet-hour-save-day-${S.day}.json`;a.click();URL.revokeObjectURL(a.href);toast('Save exported')}
+document.getElementById('importFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{S=Object.assign(defaultState(),JSON.parse(r.result));save();render();switchView(S.lastView||'home');toast('Save imported ✨')}catch(err){toast('That save file did not work.')}};r.readAsText(f)});
+function resetGame(){openModal(`<h2>Reset Velvet Hour?</h2><p class="muted">This wipes your progress on this device. Export a save first if you might want it later.</p><div class="hero-row"><button class="btn" onclick="confirmReset()">Yep, reset it</button><button class="btn secondary" onclick="closeModal()">Cancel</button></div>`)}
+function confirmReset(){localStorage.removeItem(SAVE_KEY);S=defaultState();closeModal();switchView('home');render();toast('Fresh save started')}
+
+document.getElementById('primaryHero').addEventListener('click',startGame);document.getElementById('sleepBtn').addEventListener('click',sleep);document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+if(!S.quests.length&&S.flags.started)makeQuests();if(!S.shop.length&&S.flags.started)rerollShop(false);render();switchView(S.lastView||'home');
+</script>
+</body>
+</html>
