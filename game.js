@@ -570,5 +570,145 @@ renderStudio=function(){__renderStudioBase();if(S.studioTab==='perfume'){const c
 ensureArcadeState();
 
 
-document.getElementById('startBtn').addEventListener('click',startGame);document.getElementById('nextBlockBtn').addEventListener('click',advanceTime);document.getElementById('sleepBtn').addEventListener('click',sleep);document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+document.getElementById('startBtn').addEventListener('click',()=>startGame());document.getElementById('nextBlockBtn').addEventListener('click',()=>advanceTime());document.getElementById('sleepBtn').addEventListener('click',()=>sleep());document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 if(S.started&&!S.quests.daily.length)generateQuests();if(S.started&&!S.shop.length)rollShop();if(S.started&&!S.commissions.length)generateCommissions();render();switchView(S.lastView||'home');
+
+/* =========================================================
+   DIRECTOR'S CUT — scene-driven shell, overworld, unified nav
+   ========================================================= */
+const DIRECTOR_NAV=[
+  ['home','🏠','Home'],['city','🌃','City'],['studio','🧪','Studio'],['style','🪩','Style'],['apartment','🛋️','Apartment'],['people','💌','People'],['progress','🏆','Progress'],['calendar','🗓️','Calendar'],['settings','⚙️','Settings']
+];
+const SCENE_META={
+  home:{k:'YOUR APARTMENT',title:'Your night is yours.',icon:'🛋️',prop:'☕',sign:'after hours'},
+  city:{k:'VELVET CITY',title:'Pick a district. Make questionable plans.',icon:'🌃',prop:'🛍️',sign:'velvet city'},
+  studio:{k:'CREATIVE STUDIO',title:'Make something weirdly specific.',icon:'🧪',prop:'🎹',sign:'make it'},
+  style:{k:'WARDROBE FLOOR',title:'Build the look, then defend it.',icon:'🪩',prop:'👢',sign:'main character'},
+  apartment:{k:'HOME BASE',title:'Upgrade the room. Stack the bonuses.',icon:'🛋️',prop:'🪴',sign:'home'},
+  people:{k:'SOCIAL MAP',title:'Everybody has lore.',icon:'💌',prop:'📕',sign:'say less'},
+  progress:{k:'PLAYER PROFILE',title:'The numbers are getting concerning.',icon:'🏆',prop:'💿',sign:'level up'},
+  calendar:{k:'CITY CALENDAR',title:'Something is always happening after dark.',icon:'🗓️',prop:'🎟️',sign:'tonight'},
+  settings:{k:'BACKSTAGE',title:'Save files, switches, suspicious buttons.',icon:'💾',prop:'⚙️',sign:'backstage'}
+};
+function isMobileNav(){return window.innerWidth<=760}
+renderTabs=function(){const el=document.getElementById('tabs');if(el)el.innerHTML=''};
+renderNav=function(){const nav=document.getElementById('nav');if(!nav)return;const set=isMobileNav()?DIRECTOR_NAV.slice(0,5):DIRECTOR_NAV;nav.innerHTML=set.map(([id,e,l])=>`<button class="${S.lastView===id?'active':''}" onclick="switchView('${id}')"><span>${e}</span>${l}</button>`).join('')+(isMobileNav()?`<button class="more-nav ${['apartment','people','progress','calendar','settings'].includes(S.lastView)?'active':''}" onclick="openNavDrawer()"><span>✦</span>More</button>`:'')};
+function openNavDrawer(){openModal(`<div class="minigame"><div class="mini-head"><div><h2 style="margin:0">✦ Velvet Hour</h2><div class="muted small">Where to?</div></div></div><div class="mini-grid">${DIRECTOR_NAV.map(([id,e,l])=>`<button class="mini-card ${S.lastView===id?'good':''}" onclick="closeModal();switchView('${id}')"><span style="font-size:27px">${e}</span><br><b>${l}</b></button>`).join('')}</div></div>`)}
+function timeLabel(){return S.period<4?PERIODS[S.period]:'Past midnight'}
+function sceneDistrictMeta(){const d=DISTRICTS.find(x=>x.id===S.district)||DISTRICTS[0];return {k:d.name.toUpperCase(),title:d.name==='Old Market'?'Dig through racks, bargain badly, find treasure.':d.desc,icon:d.emoji,prop:d.id==='market'?'🧥':d.id==='arcade'?'🕹️':d.id==='glasshouse'?'🌼':d.id==='archive'?'📚':'✨',sign:d.name.toLowerCase()}}
+function sceneArtMarkup(meta){return `<div class="moon"></div><div class="skyline"></div><div class="window-glow"></div><div class="scene-icon">${meta.icon}</div><div class="scene-prop">${meta.prop}</div><div class="neon-sign">${meta.sign}</div>`}
+function renderSceneFrame(){
+  const view=S.lastView||'home',base=view==='city'?sceneDistrictMeta():SCENE_META[view]||SCENE_META.home;
+  document.body.dataset.scene=view+(view==='city'?`-${S.district}`:'');
+  const kicker=document.getElementById('sceneKicker'),art=document.getElementById('sceneArt'),status=document.getElementById('sceneStatus');
+  if(kicker)kicker.textContent=base.k;if(art)art.innerHTML=sceneArtMarkup(base);
+  const greeting=document.getElementById('greeting'),hero=document.getElementById('heroText');
+  if(greeting)greeting.textContent=S.started?(view==='home'?`${weekday()} night • ${timeLabel()}`:base.title):'Velvet City is waiting, Mak.';
+  if(hero)hero.textContent=S.started?(view==='home'?`Choose how to spend tonight. Your build is Level ${S.level}, your Vibe is ${calcVibe()}, and perfection is not a quest requirement.`:(view==='city'?base.title:`${base.k} • ${eventToday()?eventToday().emoji+' '+eventToday().name:'ordinary city night'}`)):'Enter the city to start your first night run.';
+  if(status)status.innerHTML=S.started?`<span class="status-chip">🌙 Day ${S.day}</span><span class="status-chip">⏳ ${timeLabel()}</span><span class="status-chip">⚡ ${S.energy}/${S.maxEnergy+(decorBonuses().energy||0)}</span><span class="status-chip">🔥 Flow ${S.flow||0}%</span>${eventToday()?`<span class="status-chip">${eventToday().emoji} ${eventToday().name}</span>`:''}`:'';
+  const lvl=document.getElementById('hudLevel'),rail=document.getElementById('railLevel'),xp=document.getElementById('hudXpBar'),xpt=document.getElementById('hudXpText'),hw=document.getElementById('hudWeekday'),hp=document.getElementById('hudPeriod'),hv=document.getElementById('hudVibe');
+  if(lvl)lvl.textContent=`Lv.${S.level}`;if(rail)rail.textContent=`Level ${S.level} • Vibe ${calcVibe()}`;if(xp)xp.style.width=`${Math.min(100,S.xp/(S.level*55)*100)}%`;if(xpt)xpt.textContent=`${S.xp} / ${S.level*55} XP`;if(hw)hw.textContent=`${weekday().toUpperCase()} • DAY ${S.day}`;if(hp)hp.textContent=timeLabel().toUpperCase();if(hv)hv.textContent=calcVibe();
+  const pips=[...document.querySelectorAll('#timePips i')];pips.forEach((p,i)=>{p.className=i<S.period?'done':i===S.period&&S.period<4?'now':''});
+  document.getElementById('startBtn').style.display=S.started?'none':'inline-block';
+}
+const __switchViewDirectorBase=switchView;
+switchView=function(id){__switchViewDirectorBase(id);renderSceneFrame();document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===id));renderNav();window.scrollTo({top:0,behavior:'smooth'})};
+const __selectDistrictDirectorBase=selectDistrict;
+selectDistrict=function(id){__selectDistrictDirectorBase(id);renderSceneFrame();enhanceDirectorSurfaces()};
+const __renderDirectorBase=render;
+render=function(){__renderDirectorBase();renderSceneFrame();enhanceDirectorSurfaces()};
+
+const __renderCityDirectorBase=renderCity;
+renderCity=function(){
+  const d=DISTRICTS.find(x=>x.id===S.district)||DISTRICTS[0];
+  const posLabel=x=>x.id==='arcade'?'Level 3':x.id==='glasshouse'?'85 Vibe':x.id==='archive'?'Knowledge + story':'170 Vibe';
+  document.getElementById('districts').innerHTML=`<div class="city-map"><div class="map-road" style="width:41%;left:18%;top:60%;transform:rotate(-18deg)"></div><div class="map-road" style="width:44%;left:47%;top:52%;transform:rotate(15deg)"></div><div class="map-road" style="width:36%;left:25%;top:30%;transform:rotate(35deg)"></div><div class="map-road" style="width:36%;left:56%;top:28%;transform:rotate(-25deg)"></div>${DISTRICTS.map(x=>{const u=x.unlock(S);return `<button class="map-node ${x.id} ${S.district===x.id?'active':''} ${u?'':'locked'}" onclick="selectDistrict('${x.id}')"><div class="node-icon">${x.emoji}</div><b>${x.name}</b><small>${u?'OPEN':'🔒 '+posLabel(x)}</small></button>`}).join('')}</div>`;
+  document.getElementById('districtTitle').innerHTML=`<span class="district-emblem">${d.emoji}</span><h3>${d.name}</h3>`;
+  document.getElementById('districtDesc').textContent=d.desc;
+  const cityActions=document.getElementById('cityActions');cityActions.innerHTML=(DISTRICT_ACTIONS[d.id]||[]).map(a=>`<button class="action" onclick="doCity('${a.id}')"><span class="emoji">${a.emoji}</span><b>${a.name}</b><small>${a.desc}<br>⚡${energyCost(a.cost)} • ⏳${a.time}</small></button>`).join('');
+  const title=document.getElementById('districtTitle');if(title?.parentElement&&!title.parentElement.classList.contains('district-stage')){const parent=title.parentElement;parent.classList.add('district-stage')}
+  if(!S.shop.length)rollShop(d.id==='night'?'night':'normal');
+  document.getElementById('shop').innerHTML=S.shop.map((x,i)=>{const p=Math.ceil(x.price*(1-shopDiscount(x)/100));return `<div class="shopitem rarity-${x.rarity} ${x.sold?'sold':''}"><div class="item-emoji">${x.emoji}</div><b>${x.name}</b><div class="tiny muted">${tc(x.type)} • ${x.rarity}</div><div class="tiny muted">${x.tags.join(' • ')}</div><div class="price">${p} 🪙 ${p<x.price?`<span class="tiny muted"><s>${x.price}</s></span>`:''}</div><button class="btn secondary" ${x.sold?'disabled':''} onclick="buyShop(${i})">${x.sold?'Sold':'Buy'}</button></div>`}).join('')
+};
+function enhanceDirectorSurfaces(){
+  document.querySelectorAll('.quest').forEach(q=>{if(q.querySelector('.questbar'))return;const tag=q.querySelector('.tag');if(!tag)return;const m=(tag.textContent||'').match(/(\d+)\/(\d+)/);if(!m)return;const pct=Math.min(100,+m[1]/Math.max(1,+m[2])*100);q.insertAdjacentHTML('beforeend',`<div class="questbar"><i style="width:${pct}%"></i></div>`) });
+  document.querySelectorAll('.view .card').forEach((c,i)=>{c.style.setProperty('--card-index',i)});
+}
+const __openModalDirectorBase=openModal;
+openModal=function(html){__openModalDirectorBase(html);const box=document.querySelector('.modalbox');if(!box)return;const t=(box.textContent||'').toLowerCase();let mini='social';if(/ingredient|skincare/.test(t))mini='skincare';else if(/archive|cipher|rare shelf|book/.test(t))mini='archive';else if(/perfume|accord|scent|note pyramid/.test(t))mini='perfume';else if(/bake|cupcake|brownie|loaf/.test(t))mini='bake';else if(/arcade|neon|rhythm|combo|piano/.test(t))mini='arcade';else if(/thrift|clearance|appraisal|vendor|haggle/.test(t))mini='shop';else if(/oakley|cat jurisdiction|treat hunt/.test(t))mini='pets';box.dataset.mini=mini};
+window.addEventListener('resize',()=>{renderNav();renderSceneFrame()});
+render();switchView(S.lastView||'home');
+
+/* =========================================================
+   DIRECTOR'S CUT — night builds + recap + unique view stages
+   ========================================================= */
+const NIGHT_INTENTS={
+  treasure:{emoji:'🛍️',name:'Treasure Goblin',desc:'Shops are 12% cheaper tonight. Financial responsibility, but make it opportunistic.'},
+  creative:{emoji:'✨',name:'Creative Spiral',desc:'Creative and knowledge skills gain 20% more skill XP tonight.'},
+  social:{emoji:'💋',name:'Main Character',desc:'Every friendship gain gets +1 tonight.'},
+  locked:{emoji:'🎯',name:'Locked In',desc:'Start at 15 Flow and get a tiny performance bump on minigames.'},
+  cozy:{emoji:'🛋️',name:'Cozy Reset',desc:'Gain 2 bonus energy for this night only.'}
+};
+function ensureDirectorState(){
+  if(!('nightIntent' in S))S.nightIntent=null;
+  if(!S.nightRun)S.nightRun={day:S.day,startCoins:S.coins,startActions:S.lifetime.actions||0,startMini:S.lifetime.minigames||0};
+  if(typeof S.nightBonusEnergy!=='number')S.nightBonusEnergy=0;
+}
+ensureDirectorState();
+function resetNightRun(){S.nightRun={day:S.day,startCoins:S.coins,startActions:S.lifetime.actions||0,startMini:S.lifetime.minigames||0};save()}
+function promptNightIntent(){
+  if(!S.started||S.nightIntent)return;
+  openModal(`<div class="minigame"><div class="mini-head"><div><div class="eyebrow">NIGHT BUILD</div><h2 style="margin:3px 0">Choose tonight's intention</h2></div><span class="mini-score">Day ${S.day}</span></div><p class="muted">One temporary bonus. It disappears tomorrow, so pick whatever sounds fun rather than trying to optimize your entire fake life.</p><div class="intent-grid">${Object.entries(NIGHT_INTENTS).map(([id,x])=>`<button class="intent-card" onclick="chooseNightIntent('${id}')"><span class="intent-icon">${x.emoji}</span><b>${x.name}</b><small>${x.desc}</small></button>`).join('')}</div></div>`)
+}
+function chooseNightIntent(id){
+  const x=NIGHT_INTENTS[id];if(!x)return;S.nightIntent=id;S.nightBonusEnergy=0;
+  if(id==='locked')S.flow=Math.max(S.flow||0,15);
+  if(id==='cozy'){S.nightBonusEnergy=2;S.energy+=2}
+  addFeed(`${x.emoji} Night intention: ${x.name}.`);closeModal();save();render();toast(`${x.emoji} ${x.name}`)
+}
+const __startGameIntentBase=startGame;
+startGame=function(){const was=S.started;__startGameIntentBase();ensureDirectorState();if(!was){resetNightRun();setTimeout(promptNightIntent,80)}};
+const __shopDiscountIntentBase=shopDiscount;
+shopDiscount=function(it){return __shopDiscountIntentBase(it)+(S.nightIntent==='treasure'?12:0)};
+const __gainSkillIntentBase=gainSkill;
+gainSkill=function(k,n){if(S.nightIntent==='creative'&&['perfumery','styling','baking','music','lore'].includes(k))n=Math.round(n*1.2);return __gainSkillIntentBase(k,n)};
+const __friendIntentBase=friend;
+friend=function(id,n){return __friendIntentBase(id,n+(S.nightIntent==='social'&&n>0?1:0))};
+const __miniRewardIntentBase=miniReward;
+miniReward=function(key,score,opts={}){if(S.nightIntent==='locked')score=Math.min(100,score+4);return __miniRewardIntentBase(key,score,opts)};
+const __sleepRecapBase=sleep;
+sleep=function(){
+  if(!S.started)return;ensureDirectorState();
+  const run=S.nightRun||{startCoins:S.coins,startActions:S.lifetime.actions||0,startMini:S.lifetime.minigames||0};
+  const actions=Math.max(0,(S.lifetime.actions||0)-run.startActions),minis=Math.max(0,(S.lifetime.minigames||0)-run.startMini),net=S.coins-run.startCoins,quests=S.quests.daily.filter(q=>q.claimed).length,flow=S.flow||0;
+  const score=Math.min(100,Math.round(flow*.48+quests*12+Math.min(30,minis*6)+Math.min(18,actions*3)));const rank=score>=90?'S':score>=78?'A':score>=64?'B':score>=48?'C':'D';
+  const intent=S.nightIntent?NIGHT_INTENTS[S.nightIntent]:null;
+  openModal(`<div class="night-recap"><div class="eyebrow">NIGHT COMPLETE</div><h2>${weekday()} • Day ${S.day}</h2><div class="night-rank">${rank}</div><div class="muted small">Night score ${score}/100${intent?` • ${intent.emoji} ${intent.name}`:''}</div><div class="recap-stats"><div class="recap-stat"><b>${actions}</b><small>ACTIONS</small></div><div class="recap-stat"><b>${minis}</b><small>MINIGAMES</small></div><div class="recap-stat"><b>${flow}%</b><small>PEAK FLOW</small></div><div class="recap-stat"><b>${net>=0?'+':''}${net}</b><small>NET COINS</small></div></div><p class="muted small">This rank is just a recap, not a punishment. A chaotic D-rank shopping night is still canon.</p><button class="btn gold" onclick="advanceNightDirector()">🌘 Start Day ${S.day+1}</button><button class="btn secondary" onclick="closeModal()">Not yet</button></div>`)
+};
+function advanceNightDirector(){
+  closeModal();S.nightIntent=null;S.nightBonusEnergy=0;__sleepRecapBase();ensureDirectorState();resetNightRun();save();render();setTimeout(promptNightIntent,120)
+}
+function directorStage(view,title,desc,hero,prop,cls){return `<div class="view-stage ${cls||''}" data-director-stage="${view}"><div class="eyebrow">${view.toUpperCase()}</div><h2>${title}</h2><p>${desc}</p><div class="stage-visual"><span class="hero-emoji">${hero}</span><span class="prop-emoji">${prop}</span></div></div>`}
+function updateUniqueStages(){
+  const configs={
+    studio:['Your little creative laboratory',S.studioTab==='perfume'?'Build accords, tune formulas, and accidentally create something expensive.':S.studioTab==='baking'?'Timing, order, and doneness all matter here.':S.studioTab==='piano'?'Patterns first. Musical dignity later.':'Train your nose one clue at a time.','🧪','🎹','studio-stage'],
+    style:['Dressing room',`Today's brief: ${STYLE_THEMES[S.styleTheme]?.name||'After Dark'}. Equipped pieces: ${Object.values(S.outfit).filter(Boolean).length}/5.`,'🪩','👢','style-stage'],
+    apartment:[`Apartment Lv.${S.homeLevel}`,`Your equipped decor changes the actual game economy. Oakley approves of any upgrade that creates more floor to occupy.`,'🛋️','🐕','apartment-stage'],
+    people:['People of Velvet City',`Highest friendship: ${Math.max(...Object.values(S.friendship))}. Every NPC has their own preferences, systems, and increasingly unnecessary lore.`,'💌','📕','people-stage'],
+    progress:[`Level ${S.level} • Vibe ${calcVibe()}`,`${S.achievements.length}/${ACHIEVEMENTS.length} achievements • ${Object.keys(S.mastery||{}).length} activities with recorded mastery.`,'🏆','💿','progress-stage'],
+    calendar:[`Season ${S.flags.season} • Day ${seasonDay()}`,eventToday()?`${eventToday().emoji} Tonight: ${eventToday().name} — ${eventToday().desc}`:'No special event tonight. Suspiciously peaceful.','🗓️','🎟️','calendar-stage']
+  };
+  Object.entries(configs).forEach(([view,c])=>{const sec=document.querySelector(`.view[data-view="${view}"]`);if(!sec)return;let st=sec.querySelector(`[data-director-stage="${view}"]`);const html=directorStage(view,...c);if(st)st.outerHTML=html;else sec.insertAdjacentHTML('afterbegin',html)});
+  const sum=document.getElementById('tonightSummary');if(sum&&S.started&&S.nightIntent&&!sum.querySelector('.intent-badge')){const x=NIGHT_INTENTS[S.nightIntent];sum.insertAdjacentHTML('beforeend',`<div style="margin-top:9px"><span class="intent-badge">${x.emoji} Tonight: <b>${x.name}</b></span></div>`)}
+  const status=document.getElementById('sceneStatus');if(status&&S.started&&S.nightIntent&&!status.querySelector('.intent-badge')){const x=NIGHT_INTENTS[S.nightIntent];status.insertAdjacentHTML('beforeend',`<span class="intent-badge">${x.emoji} ${x.name}</span>`)}
+}
+const __renderFinalDirectorBase=render;
+render=function(){ensureDirectorState();__renderFinalDirectorBase();updateUniqueStages();renderSceneFrame()};
+const __switchFinalDirectorBase=switchView;
+switchView=function(id){__switchFinalDirectorBase(id);updateUniqueStages();renderSceneFrame()};
+ensureDirectorState();render();switchView(S.lastView||'home');
+
+/* tiny Director's Cut polish */
+const __renderSceneEnergyBase=renderSceneFrame;
+renderSceneFrame=function(){__renderSceneEnergyBase();const me=document.getElementById('maxEnergy');if(me)me.textContent=S.maxEnergy+(decorBonuses().energy||0)+(S.nightBonusEnergy||0)};
+if(S.started&&!S.nightIntent)setTimeout(promptNightIntent,180);

@@ -5,26 +5,57 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#120c11" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<title>Velvet Hour: After Dark — Arcade Cut</title>
+<title>Velvet Hour: After Dark — Director's Cut</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-<div class="app">
-  <header class="topbar">
-    <div class="brand"><div class="logo">✦</div><div><h1>Velvet Hour: After Dark</h1><div class="subtitle">Mak's cozy after-hours RPG • Arcade Cut</div></div></div>
-    <div class="resources">
-      <div class="pill">🪙 <b id="coins">0</b></div><div class="pill">⚡ <b id="energy">0</b>/<span id="maxEnergy">0</span></div><div class="pill">💡 <b id="inspiration">0</b></div><div class="pill">🔥 <b id="flow">0</b>%</div><div class="pill">🌙 Day <b id="day">1</b></div>
+<body data-scene="home">
+<div class="game-shell">
+  <aside class="rail-shell">
+    <div class="rail-brand"><div class="rail-logo">✦</div><div><b>VELVET HOUR</b><small>AFTER DARK</small></div></div>
+    <div class="rail-profile">
+      <div class="portrait-mini" id="railPortrait">M</div>
+      <div><b>Mak</b><small id="railLevel">Level 1</small></div>
     </div>
-  </header>
+    <nav class="nav game-nav" id="nav"></nav>
+    <div class="rail-tip"><span>✦</span><small>Every night is a build. There is no wrong route.</small></div>
+  </aside>
 
-  <section class="hero leopard">
-    <h2 id="greeting">Velvet City is waking up.</h2>
-    <p id="heroText">Build a life after hours: collect, explore, style, blend, bake, read, make friends, chase secrets, and become extremely powerful in ways that have no practical value.</p>
-    <div class="hero-row"><button id="startBtn" class="btn">Enter Velvet City</button><button id="nextBlockBtn" class="btn secondary">⏳ Advance time</button><button id="sleepBtn" class="btn ghost">🌘 End day</button></div>
-  </section>
+  <div class="app">
+    <header class="topbar hudbar">
+      <div class="hud-player">
+        <div class="portrait" id="playerPortrait"><span>✦</span></div>
+        <div class="hud-player-copy"><div class="eyebrow">NIGHT RUNNER</div><div class="hud-name">Mak <span id="hudLevel">Lv.1</span></div><div class="xp-track"><i id="hudXpBar"></i></div><div class="tiny muted" id="hudXpText">0 / 55 XP</div></div>
+      </div>
+      <div class="hud-clock">
+        <div class="eyebrow" id="hudWeekday">MONDAY • DAY 1</div>
+        <b id="hudPeriod">DUSK</b>
+        <div class="time-pips" id="timePips"><i></i><i></i><i></i><i></i></div>
+      </div>
+      <div class="resources">
+        <div class="pill resource coin">🪙 <b id="coins">0</b></div>
+        <div class="pill resource energy">⚡ <b id="energy">0</b>/<span id="maxEnergy">0</span></div>
+        <div class="pill resource insp">💡 <b id="inspiration">0</b></div>
+        <div class="pill resource flow">🔥 <b id="flow">0</b>%</div>
+        <div class="pill resource vibe">💿 <b id="hudVibe">0</b></div><span id="day" hidden>1</span>
+      </div>
+      <div class="hud-actions">
+        <button id="nextBlockBtn" class="icon-btn" title="Advance time">⏳ <span>Advance</span></button>
+        <button id="sleepBtn" class="icon-btn danger-soft" title="End day">🌘 <span>End day</span></button>
+      </div>
+    </header>
 
-  <div class="tabs" id="tabs"></div>
+    <section class="hero scene-hero" id="sceneHero">
+      <div class="scene-copy">
+        <div class="scene-kicker" id="sceneKicker">YOUR APARTMENT</div>
+        <h2 id="greeting">Velvet City is waking up.</h2>
+        <p id="heroText">Build a life after hours.</p>
+        <div class="scene-status" id="sceneStatus"></div>
+        <div class="hero-row"><button id="startBtn" class="btn gold">Enter Velvet City</button></div>
+      </div>
+      <div class="scene-art" id="sceneArt" aria-hidden="true"></div>
+    </section>
 
+    <div class="tabs" id="tabs" hidden></div>
   <main>
     <section class="view" data-view="home">
       <div class="grid">
@@ -39,7 +70,7 @@
     <section class="view" data-view="city">
       <div class="grid">
         <div class="card span-4"><h3>🗺️ Velvet City</h3><div class="actions" id="districts"></div></div>
-        <div class="card span-8"><h3 id="districtTitle">Old Market</h3><p id="districtDesc" class="muted small"></p><div class="actions" id="cityActions"></div></div>
+        <div class="card span-8"><div id="districtTitle"><h3>Old Market</h3></div><p id="districtDesc" class="muted small"></p><div class="actions" id="cityActions"></div></div>
         <div class="card span-12"><h3>🛍️ Rotating shop</h3><div class="shopgrid" id="shop"></div></div>
       </div>
     </section>
@@ -101,10 +132,13 @@
       </div>
     </section>
   </main>
-  <div class="footer">VELVET HOUR: AFTER DARK — ARCADE CUT • every action is playable • no streaks, no guilt, no microtransactions</div>
-</div>
-<div class="nav" id="nav"></div><div class="toast" id="toast"></div><div class="modal" id="modal"><div class="modalbox"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
 
+
+    <div class="footer">VELVET HOUR: AFTER DARK — DIRECTOR'S CUT • one world, many little obsessions</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="modalbox"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
 <script src="game.js"></script>
 </body>
 </html>
