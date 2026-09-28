@@ -1,714 +1,552 @@
+/* Velvet Hour — The House on Nocturne Street
+   Campaign-first cozy puzzle RPG. No external dependencies. */
+'use strict';
 
-const SAVE_KEY='velvetHourMak_v2'; const OLD_SAVE_KEY='velvetHourMak_v1';
-const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a; const pick=a=>a[Math.floor(Math.random()*a.length)]; const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)); const tc=s=>s.replace(/\b\w/g,m=>m.toUpperCase());
-const PERIODS=['5:30 PM','7:00 PM','8:30 PM','10:00 PM']; const WEEK=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const RARITY_VIBE={Common:3,Uncommon:5,Rare:9,Epic:15,Legendary:24};
+const SAVE_KEY = 'velvetHouse_nocturne_v1';
+const LEGACY_KEY = 'velvetHourMak_v2';
+const $ = (s, root=document) => root.querySelector(s);
+const $$ = (s, root=document) => [...root.querySelectorAll(s)];
+const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const shuffle = arr => [...arr].sort(()=>Math.random()-.5);
 
-const ITEMS=[
-{id:'brown_dunks',name:'Coffee Brown Dunks',type:'wardrobe',slot:'shoes',emoji:'👟',rarity:'Rare',price:36,tags:['brown','casual','y2k']},
-{id:'black_loafers',name:'Thrifted Black Loafers',type:'wardrobe',slot:'shoes',emoji:'🥿',rarity:'Epic',price:42,tags:['black','dark','preppy']},
-{id:'silver_maryjanes',name:'Silver Buckle Mary Janes',type:'wardrobe',slot:'shoes',emoji:'👠',rarity:'Rare',price:39,tags:['silver','romantic','dark']},
-{id:'burg_tee',name:'Burgundy Baby Tee',type:'wardrobe',slot:'top',emoji:'👚',rarity:'Rare',price:27,tags:['burgundy','y2k','casual']},
-{id:'black_mesh',name:'Black Mesh Long Sleeve',type:'wardrobe',slot:'top',emoji:'🖤',rarity:'Epic',price:34,tags:['black','dark','romantic']},
-{id:'brown_hoodie',name:'Soft Brown Zip Hoodie',type:'wardrobe',slot:'top',emoji:'🤎',rarity:'Common',price:22,tags:['brown','cozy','casual']},
-{id:'flare_jeans',name:'Black Flare Jeans',type:'wardrobe',slot:'bottom',emoji:'👖',rarity:'Rare',price:32,tags:['black','y2k','dark']},
-{id:'plaid_skirt',name:'Brown Plaid Mini Skirt',type:'wardrobe',slot:'bottom',emoji:'🟫',rarity:'Rare',price:29,tags:['brown','preppy','romantic']},
-{id:'dark_denim',name:'Dark Wash Low-Rise Jeans',type:'wardrobe',slot:'bottom',emoji:'👖',rarity:'Epic',price:38,tags:['y2k','dark','casual']},
-{id:'leopard_bag',name:'Leopard Shoulder Bag',type:'wardrobe',slot:'bag',emoji:'👜',rarity:'Epic',price:44,tags:['leopard','y2k','statement']},
-{id:'silver_bag',name:'Tiny Silver Baguette Bag',type:'wardrobe',slot:'bag',emoji:'👜',rarity:'Rare',price:35,tags:['silver','y2k','night']},
-{id:'brown_tote',name:'Coffee Brown Book Tote',type:'wardrobe',slot:'bag',emoji:'👜',rarity:'Common',price:24,tags:['brown','bookish','cozy']},
-{id:'silver_ring',name:'Chunky Silver Ring',type:'wardrobe',slot:'accessory',emoji:'💍',rarity:'Epic',price:35,tags:['silver','dark','statement']},
-{id:'star_clips',name:'Silver Star Hair Clips',type:'wardrobe',slot:'accessory',emoji:'⭐',rarity:'Common',price:12,tags:['silver','y2k','cute']},
-{id:'cherry_choker',name:'Cherry Charm Choker',type:'wardrobe',slot:'accessory',emoji:'🍒',rarity:'Rare',price:26,tags:['burgundy','romantic','y2k']},
-{id:'chrome_lamp',name:'Tiny Chrome Lamp',type:'decor',slot:'light',emoji:'💡',rarity:'Rare',price:31,tags:['silver','modern'],bonus:{creativity:1}},
-{id:'burg_blanket',name:'Burgundy Throw Blanket',type:'decor',slot:'textile',emoji:'🧣',rarity:'Rare',price:25,tags:['burgundy','cozy'],bonus:{energy:1}},
-{id:'leopard_tray',name:'Vintage Leopard Tray',type:'decor',slot:'curio',emoji:'🐆',rarity:'Epic',price:38,tags:['leopard','y2k'],bonus:{shop:1}},
-{id:'glitter_frame',name:'2000s Glitter Frame',type:'decor',slot:'wall',emoji:'🖼️',rarity:'Rare',price:22,tags:['silver','y2k'],bonus:{style:1}},
-{id:'mousepad',name:'Leopard Mouse Pad',type:'decor',slot:'desk',emoji:'🖱️',rarity:'Rare',price:18,tags:['leopard','work'],bonus:{focus:1}},
-{id:'bookstack',name:'Moody Book Stack',type:'decor',slot:'desk',emoji:'📚',rarity:'Uncommon',price:20,tags:['bookish','cozy'],bonus:{knowledge:1}},
-{id:'mirror',name:'Silver Mini Mirror',type:'decor',slot:'wall',emoji:'🪞',rarity:'Common',price:16,tags:['silver'],bonus:{confidence:1}},
-{id:'cake_stand',name:'Mini Glass Cake Stand',type:'decor',slot:'curio',emoji:'🍰',rarity:'Rare',price:21,tags:['baking','cute'],bonus:{baking:1}},
-{id:'vanity_light',name:'Burgundy Vanity Light',type:'decor',slot:'light',emoji:'💡',rarity:'Epic',price:45,tags:['burgundy','romantic'],bonus:{perfume:1}},
-{id:'old_romance',name:'Old Romance Paperback',type:'book',emoji:'📕',rarity:'Common',price:10,tags:['romance']},
-{id:'foil_fantasy',name:'Foil-Stamped Fantasy Novel',type:'book',emoji:'📚',rarity:'Epic',price:32,tags:['fantasy']},
-{id:'dark_romance',name:'Dog-Eared Dark Romance',type:'book',emoji:'📓',rarity:'Rare',price:18,tags:['dark romance']},
-{id:'y2k_mag',name:'2004 Fashion Magazine',type:'curio',emoji:'💿',rarity:'Rare',price:20,tags:['y2k']},
-{id:'cow_box',name:'Cow Print Trinket Box',type:'curio',emoji:'🐄',rarity:'Rare',price:21,tags:['weird']},
-{id:'perfume_mini',name:'Mystery Perfume Mini',type:'curio',emoji:'🧴',rarity:'Legendary',price:52,tags:['perfume']},
-{id:'flip_phone',name:'Dead Silver Flip Phone',type:'curio',emoji:'📱',rarity:'Epic',price:40,tags:['silver','y2k']},
-{id:'glass_cherry',name:'Glass Cherry Charm',type:'curio',emoji:'🍒',rarity:'Rare',price:23,tags:['burgundy','cute']},
-{id:'book_light',name:'Starry Book Light',type:'curio',emoji:'🔦',rarity:'Common',price:14,tags:['bookish']}
+const CHAPTERS = [
+  {
+    numeral:'I', name:'The Front Room', room:'atelier', icon:'🪞',
+    kicker:'OPEN THE FIRST DOOR',
+    summary:'Turn the dustiest room in the house into a tiny styling atelier—and prove Velvet House can be useful to someone besides you.',
+    reward:'Unlock the Scent Lab + Mina',
+    objectives:[
+      {id:'frontReset', label:'Restore the front room', detail:'Complete the room reset', need:1, action:'reset-front'},
+      {id:'sourced', label:'Source two display pieces', detail:'Win 2 thrift briefs', need:2, action:'thrift'},
+      {id:'styled', label:'Finish your first client look', detail:'Score B or better', need:1, action:'style'},
+      {id:'rep', label:'Build local reputation', detail:'Reach 15 reputation', need:15, stat:'reputation'}
+    ],
+    boss:{name:'The First Window', detail:'Style a three-part storefront display for Jules.', action:'boss-style'}
+  },
+  {
+    numeral:'II', name:'The Scent Bar', room:'lab', icon:'🧪',
+    kicker:'MAKE THE HOUSE SMELL LIKE IT BELONGS TO YOU',
+    summary:'Mina thinks the old side room could become a scent bar. Restore it, learn the note system, and bottle something worth putting your name on.',
+    reward:'Unlock the Night Kitchen + Bea',
+    objectives:[
+      {id:'labReset', label:'Restore the scent cabinet', detail:'Sort the abandoned stock', need:1, action:'reset-lab'},
+      {id:'scentPractice', label:'Learn the note pyramid', detail:'Complete 2 scent studies', need:2, action:'scent-study'},
+      {id:'scentCommission', label:'Bottle Mina’s commission', detail:'Score B or better', need:1, action:'scent-commission'},
+      {id:'minaBond', label:'Earn Mina’s trust', detail:'Reach 1 heart', need:1, relation:'mina'}
+    ],
+    boss:{name:'House Signature No. 01', detail:'Build the first official Velvet House fragrance.', action:'boss-scent'}
+  },
+  {
+    numeral:'III', name:'The Night Kitchen', room:'kitchen', icon:'🧁',
+    kicker:'SOMETHING WARM AFTER MIDNIGHT',
+    summary:'Bea wants to run late-night bakes through the house. Get the kitchen functional, handle real orders, and survive one very opinionated tasting table.',
+    reward:'Unlock the Archive + Rowan',
+    objectives:[
+      {id:'kitchenReset', label:'Make the kitchen usable', detail:'Restore the prep stations', need:1, action:'reset-kitchen'},
+      {id:'baked', label:'Fill two bakery orders', detail:'Score B or better twice', need:2, action:'bake'},
+      {id:'budget', label:'Price the menu correctly', detail:'Solve Bea’s costing sheet', need:1, action:'budget'},
+      {id:'beaBond', label:'Become Bea’s reliable backup', detail:'Reach 1 heart', need:1, relation:'bea'}
+    ],
+    boss:{name:'The Midnight Tasting', detail:'Complete a multi-stage bake for invited guests.', action:'boss-bake'}
+  },
+  {
+    numeral:'IV', name:'The Locked Archive', room:'archive', icon:'📚',
+    kicker:'THE HOUSE KEPT RECEIPTS',
+    summary:'A false wall opens behind the kitchen shelves. Rowan recognizes the symbols inside. The house has a history—and apparently opinions.',
+    reward:'Unlock the Grand Showcase + final chapter',
+    objectives:[
+      {id:'archiveReset', label:'Restore the reading table', detail:'Sort the damaged archive', need:1, action:'reset-archive'},
+      {id:'ciphers', label:'Decode three house fragments', detail:'Solve 3 archive puzzles', need:3, action:'cipher'},
+      {id:'fragments', label:'Recover two memory fragments', detail:'Find both hidden records', need:2, action:'fragment'},
+      {id:'rowanBond', label:'Get Rowan to stop being cryptic', detail:'Reach 1 heart', need:1, relation:'rowan'}
+    ],
+    boss:{name:'The Room Behind the Room', detail:'Solve the archive’s chained lock puzzle.', action:'boss-archive'}
+  },
+  {
+    numeral:'V', name:'Moonlight Opening', room:'showcase', icon:'🌙',
+    kicker:'MAKE IT LOOK INTENTIONAL',
+    summary:'Every restored room feeds one final event: the Velvet House moonlight opening. Build the showcase, choose what the house stands for, and earn your sign above the door.',
+    reward:'Unlock After Hours freeplay',
+    objectives:[
+      {id:'finalStyle', label:'Prepare the showcase look', detail:'Complete the final style brief', need:1, action:'final-style'},
+      {id:'finalScent', label:'Bottle the opening fragrance', detail:'Complete the final scent brief', need:1, action:'final-scent'},
+      {id:'finalBake', label:'Prepare the midnight table', detail:'Complete the final bake', need:1, action:'final-bake'},
+      {id:'finalLore', label:'Choose the house inscription', detail:'Solve the final archive clue', need:1, action:'final-lore'},
+      {id:'rep', label:'Become known in Velvet City', detail:'Reach 100 reputation', need:100, stat:'reputation'}
+    ],
+    boss:{name:'The Moonlight Opening', detail:'A four-room mastery gauntlet. Your house, your rules.', action:'festival'}
+  },
+  {
+    numeral:'✦', name:'After Hours', room:'showcase', icon:'✨',
+    kicker:'THE HOUSE IS OPEN',
+    summary:'The campaign is complete. Replay mastered challenges, deepen relationships, collect keepsakes, and improve your personal bests.',
+    reward:'You already won. Now make it yours.', objectives:[], boss:null
+  }
 ];
 
-const NOTES={
-Vanilla:{emoji:'🍦',family:'gourmand',level:1,role:'base'},Marshmallow:{emoji:'☁️',family:'gourmand',level:1,role:'heart'},Pear:{emoji:'🍐',family:'fruity',level:1,role:'top'},Jasmine:{emoji:'🌼',family:'floral',level:1,role:'heart'},Amber:{emoji:'🟠',family:'amber',level:1,role:'base'},Musk:{emoji:'🫧',family:'clean',level:1,role:'base'},
-Cherry:{emoji:'🍒',family:'fruity',level:2,role:'top'},Coffee:{emoji:'☕',family:'gourmand',level:2,role:'heart'},Caramel:{emoji:'🍮',family:'gourmand',level:2,role:'heart'},Rose:{emoji:'🌹',family:'floral',level:2,role:'heart'},Bergamot:{emoji:'🍋',family:'citrus',level:2,role:'top'},Coconut:{emoji:'🥥',family:'gourmand',level:2,role:'top'},
-Sandalwood:{emoji:'🪵',family:'woody',level:3,role:'base'},Tonka:{emoji:'🫘',family:'gourmand',level:3,role:'base'},Neroli:{emoji:'🌿',family:'floral',level:3,role:'top'},Patchouli:{emoji:'🍂',family:'woody',level:3,role:'base'},Plum:{emoji:'🫐',family:'fruity',level:4,role:'top'},Iris:{emoji:'🪻',family:'floral',level:4,role:'heart'},Cashmere:{emoji:'🧶',family:'musk',level:4,role:'base'},Cocoa:{emoji:'🍫',family:'gourmand',level:4,role:'heart'}
-};
-const PERFUME_RECIPES=[
-{name:'Vanilla Static',notes:['Pear','Marshmallow','Vanilla'],rarity:'Rare',desc:'pear fizz, fluffy sugar, soft vanilla static'},
-{name:'Burgundy Kiss',notes:['Cherry','Rose','Amber'],rarity:'Rare',desc:'dark cherry lipstick and warm velvet'},
-{name:'Midnight Library',notes:['Bergamot','Coffee','Sandalwood'],rarity:'Epic',desc:'espresso, old pages, polished wood'},
-{name:'Silver Bloom',notes:['Neroli','Jasmine','Musk'],rarity:'Epic',desc:'cold white florals and clean skin'},
-{name:'Caffeinated Crush',notes:['Coffee','Caramel','Tonka'],rarity:'Epic',desc:'sweet coffee with absolutely no restraint'},
-{name:'Velvet Picnic',notes:['Pear','Coconut','Vanilla'],rarity:'Rare',desc:'creamy fruit and sun-warmed skin'},
-{name:'Afterglow',notes:['Bergamot','Iris','Cashmere'],rarity:'Legendary',desc:'silvery powder, warm skin, late-night air'},
-{name:'Cherry Smoke',notes:['Cherry','Cocoa','Patchouli'],rarity:'Legendary',desc:'dark fruit, bitter cocoa, smoky earth'},
-{name:'Soft Threat',notes:['Plum','Jasmine','Amber'],rarity:'Epic',desc:'juicy plum, white petals, amber heat'},
-{name:'Brown Sugar Weather',notes:['Coconut','Caramel','Tonka'],rarity:'Legendary',desc:'toasted sugar, cream, brown warmth'}
-];
-
-const STYLE_THEMES=[
-{name:'Dark Y2K Errand Run',tags:['y2k','dark'],desc:'Look like the mall closes in 2006 and you have somewhere important to be.'},
-{name:'Burgundy Main Character',tags:['burgundy','romantic'],desc:'Deep red, romantic, slightly dangerous.'},
-{name:'Coffee Shop Side Quest',tags:['brown','cozy'],desc:'Bookish, warm, and accidentally put together.'},
-{name:'Silver Night Out',tags:['silver','night'],desc:'Cold metal + after-dark energy.'},
-{name:'Leopard Is A Neutral',tags:['leopard','y2k'],desc:'The city must accept the truth.'},
-{name:'Enemies-to-Lovers Bookstore',tags:['romantic','bookish'],desc:'You might argue in aisle seven.'},
-{name:'Comfort But Make It Cute',tags:['cozy','casual'],desc:'Maximum comfort without surrendering the plot.'}
-];
-
-const DISTRICTS=[
-{id:'market',name:'Old Market',emoji:'🛍️',unlock:()=>true,desc:'Thrift racks, discount aisles, and at least one object you absolutely do not need.'},
-{id:'arcade',name:'Moonlit Arcade',emoji:'🎮',unlock:s=>s.level>=3,desc:'Neon games, rhythm cabinets, and tiny prizes with enormous emotional value.'},
-{id:'glasshouse',name:'Glasshouse Row',emoji:'🌿',unlock:s=>calcVibe(s)>=85,desc:'Perfume atelier, florist, conservatory café. Everything smells expensive.'},
-{id:'archive',name:'The Archive',emoji:'📚',unlock:s=>s.story.chapter>=2||s.stats.knowledge>=16,desc:'Rare books, marginalia, strange locked cabinets, and Rowan being annoying nearby.'},
-{id:'night',name:'Night Market',emoji:'🌙',unlock:s=>calcVibe(s)>=170,desc:'Open after 8:30. Legendary finds, odd commissions, zero restraint.'}
-];
-
-const NPCS=[
-{id:'jules',name:'Jules',emoji:'🧥',role:'Thrift shop owner',blurb:'Knows exactly what rack you should check and refuses to explain how.',likes:'style + collecting'},
-{id:'mina',name:'Mina',emoji:'🧪',role:'Perfumer',blurb:'Can identify five musks by sniffing the cap. Mildly terrifying.',likes:'perfumery + curiosity'},
-{id:'bea',name:'Bea',emoji:'📚',role:'Bookseller',blurb:'Will enable any book purchase if the cover is pretty enough.',likes:'books + knowledge'},
-{id:'nova',name:'Nova',emoji:'💅',role:'Beauty obsessive',blurb:'Treats a nail set like a tactical operation.',likes:'style + confidence'},
-{id:'rowan',name:'Rowan Vale',emoji:'🖋️',role:'Archivist / professional nuisance',blurb:'Claims you are reckless. Keeps showing up anyway.',likes:'story choices + insight'}
-];
-
-const PERKS=[
-{id:'thrift_eye',name:'Rack Radar',desc:'+12% chance shop rolls Rare+ items.',cost:1,req:['collecting',2]},
-{id:'coupon_brain',name:'Coupon Brain',desc:'Shop prices are 10% lower.',cost:1,req:['collecting',3]},
-{id:'trained_nose',name:'Trained Nose',desc:'+8 perfume quality; commissions pay more.',cost:1,req:['perfumery',2]},
-{id:'gourmand_bias',name:'Gourmand Bias',desc:'Gourmand blends get +12 quality. As they should.',cost:1,req:['perfumery',4]},
-{id:'style_instinct',name:'Style Instinct',desc:'Outfit submissions get +8 base score.',cost:1,req:['styling',2]},
-{id:'accessorize',name:'One More Thing',desc:'Matching an accessory tag counts double.',cost:1,req:['styling',4]},
-{id:'mise',name:'Mise en Place',desc:'First baking mistake each session is ignored.',cost:1,req:['baking',2]},
-{id:'perfect_batch',name:'Perfect Batch',desc:'Great baking results pay +25%.',cost:1,req:['baking',4]},
-{id:'bookworm',name:'Margins Full of Notes',desc:'Reading gives +2 extra knowledge.',cost:1,req:['lore',2]},
-{id:'charm',name:'Accidental Charm',desc:'Social actions gain +1 extra friendship.',cost:1,req:['social',2]},
-{id:'night_owl',name:'Night Owl',desc:'10 PM actions cost 1 less energy, minimum 1.',cost:1,req:['focus',3]},
-{id:'deep_focus',name:'Hyperfocus, Weaponized',desc:'Creative actions gain +20% skill XP.',cost:1,req:['focus',5]}
-];
-
-const ACHIEVEMENTS=[
-{id:'firstbuy',name:'Little Treat Doctrine',emoji:'🛍️',desc:'Buy your first item.'},
-{id:'firstblend',name:'Nose With Opinions',emoji:'👃',desc:'Make your first perfume.'},
-{id:'formula',name:'Signature Behavior',emoji:'🧴',desc:'Discover a named perfume formula.'},
-{id:'style80',name:'Fit Check Passed',emoji:'🪩',desc:'Score 80+ on a style challenge.'},
-{id:'bake90',name:'Paul Hollywood Is Not Invited',emoji:'🧁',desc:'Bake with 90+ quality.'},
-{id:'friend10',name:'Local Menace, Beloved',emoji:'💌',desc:'Reach 10 friendship with anyone.'},
-{id:'collector20',name:'Curated Hoard',emoji:'📦',desc:'Own 20 unique items.'},
-{id:'vibe200',name:'The Vibe Is Structural',emoji:'💿',desc:'Reach 200 Vibe.'},
-{id:'day14',name:'Two Weeks After Dark',emoji:'🌙',desc:'Reach Day 14.'},
-{id:'rich',name:'Fake Economy Winner',emoji:'🪙',desc:'Hold 350 coins.'},
-{id:'allnotes',name:'INCI But Make It Fragrance',emoji:'🧠',desc:'Unlock every perfume note.'},
-{id:'storyend',name:'Enemies? Technically.',emoji:'📕',desc:'Finish Ink & Ashes.'},
-{id:'home4',name:'Interior Design Problem',emoji:'🏠',desc:'Upgrade apartment to level 4.'},
-{id:'oakley50',name:'Approved By Management',emoji:'🐕',desc:'Reach 50 Oakley affection.'},
-{id:'legendary',name:'Wait, That Was Actually Rare',emoji:'✨',desc:'Own a Legendary item.'}
-];
-
-const EVENTS={
-3:{name:'Discount Store Restock',emoji:'🛒',desc:'Market shop has +2 stock.'},
-5:{name:'Bookstore Late Night',emoji:'📚',desc:'Reading and Archive actions pay bonus lore XP.'},
-7:{name:'Sunday Reset Market',emoji:'🧺',desc:'Decor items cost less today.'},
-9:{name:'Perfume Workshop',emoji:'🧪',desc:'Perfume blending costs no inspiration.'},
-12:{name:'Thrift Sidewalk Sale',emoji:'🧥',desc:'Everything in Old Market is 15% off.'},
-14:{name:'Moonlit Arcade Tournament',emoji:'🎮',desc:'Piano/rhythm rewards doubled.'},
-17:{name:'Glasshouse Bloom Night',emoji:'🌼',desc:'Unlock a bonus scent note.'},
-20:{name:'Book Swap',emoji:'📖',desc:'Books are cheaper; rare book odds up.'},
-23:{name:'Night Market Festival',emoji:'🌙',desc:'Legendary shop odds rise.'},
-26:{name:'Velvet Fashion Challenge',emoji:'🪩',desc:'Style challenge pays double.'},
-28:{name:'Season Finale',emoji:'🎆',desc:'Big rewards for completed weekly quests and commissions.'}
+const NPCS = {
+  jules:{name:'Jules', icon:'🧷', color:'#8d5069', tagline:'thrift curator • professional enabler', unlock:0,
+    intro:'Jules runs Old Market’s best rack and has extremely strong opinions about “boring basics.”',
+    talks:[
+      {q:'A client says she wants to look “interesting, but not like I tried.” Jules raises an eyebrow. What do you pull first?', choices:['One strong texture + simple base','Four statement pieces at once','All black with zero contrast'], good:0},
+      {q:'Jules finds a great jacket with one missing button. Their verdict?', choices:['Leave it—imperfect means ruined','Check repair cost before deciding','Buy it at full price immediately'], good:1}
+    ]},
+  mina:{name:'Mina', icon:'🪻', color:'#7b6295', tagline:'perfumer • terrifyingly good nose', unlock:1,
+    intro:'Mina treats fragrance like architecture. She notices when you call everything sweet “vanilla.”',
+    talks:[
+      {q:'Mina hands you a bright citrus scent that disappears quickly. Which explanation would impress her?', choices:['Top notes are usually more volatile','The bottle is too small','Citrus always means weak perfume'], good:0},
+      {q:'A blend is sweet but flat. Mina asks what you would add.', choices:['Another sugary base note','A contrasting lift or texture','More of every note'], good:1}
+    ]},
+  bea:{name:'Bea', icon:'🥐', color:'#9b6d51', tagline:'night baker • chaos in an apron', unlock:2,
+    intro:'Bea can eyeball flour and somehow still gets mad when anyone else does it.',
+    talks:[
+      {q:'Bea’s brownies look done at the edges but the center still jiggles like batter. What do you say?', choices:['Pull them now','Give them more time and check again','Turn the oven off and hope'], good:1},
+      {q:'A customer wants a half batch. Bea points at 3/4 cup sugar. New amount?', choices:['3/8 cup','1/2 cup','1/4 cup'], good:0}
+    ]},
+  rowan:{name:'Rowan', icon:'🗝️', color:'#586981', tagline:'archivist • speaks in footnotes', unlock:3,
+    intro:'Rowan claims not to believe in haunted buildings while carrying three books about haunted buildings.',
+    talks:[
+      {q:'A margin note repeats every third symbol. Rowan asks what you check first.', choices:['The repeating interval','The prettiest symbol','Whether the paper smells old'], good:0},
+      {q:'Two sources disagree about a date. Best next move?', choices:['Pick the older book automatically','Compare provenance and context','Average the dates'], good:1}
+    ]}
 };
 
-const STORY={
-start:{chapter:1,title:'Chapter I — The Wrong Book',text:'At Bea’s shop, you reach for a burgundy hardback at the exact same time as a man in a charcoal coat. “That copy is restricted,” he says, as if that settles anything. You keep your hand on it.',choices:[
-{label:'“Then why is it on a public shelf?”',to:'shelf',spark:1,rivalry:2,insight:1},{label:'Smile and pull the book toward you anyway.',to:'pull',spark:2,rivalry:2,insight:0},{label:'Ask what makes it restricted.',to:'ask',spark:0,rivalry:0,insight:3}]},
-shelf:{chapter:1,title:'A Technicality',text:'His mouth twitches. “Because Bea enjoys causing problems.” From behind the counter, Bea says, “Correct.” His name, apparently, is Rowan Vale. Archivist. Obnoxious.',choices:[{label:'Offer to split the research.',to:'archiveDoor',spark:2,rivalry:0,insight:2},{label:'Tell him you’ll figure it out first.',to:'archiveDoor',spark:1,rivalry:3,insight:1}]},
-pull:{chapter:1,title:'A Petty Tug-of-War',text:'For one ridiculous second, neither of you lets go. Rowan looks at your hand, then at you. “You’re very committed to bad ideas.” “Only the interesting ones.” Bea makes a delighted noise.',choices:[{label:'Demand an explanation.',to:'archiveDoor',spark:1,rivalry:1,insight:2},{label:'Walk away with the book.',to:'archiveDoor',spark:2,rivalry:3,insight:0}]},
-ask:{chapter:1,title:'Ink That Moves',text:'Rowan lowers his voice. The ink changes when the book is exposed to certain perfumes. A coded archive index, hidden in scent. You have never been more unfortunately interested in anything.',choices:[{label:'“Fine. Show me.”',to:'archiveDoor',spark:1,rivalry:0,insight:3},{label:'“I can test that myself.”',to:'archiveDoor',spark:0,rivalry:2,insight:2}]},
-archiveDoor:{chapter:2,title:'Chapter II — After Closing',text:'The Archive smells like paper, rain, and old wood. Rowan unlocks a cabinet. Inside: six perfume vials, each labeled only with a symbol. “Don’t touch anything.” Naturally, this is insulting.',choices:[
-{label:'Actually listen, for once. Study the symbols.',to:'vials',spark:1,rivalry:0,insight:3,req:{insight:3}},{label:'Pick up the warm amber vial.',to:'vials',spark:2,rivalry:2,insight:1},{label:'Ask Rowan why he cares so much.',to:'why',spark:2,rivalry:0,insight:2}]},
-why:{chapter:2,title:'The First Honest Answer',text:'His grandfather catalogued the collection and vanished before finishing the index. Rowan has been reconstructing it for years. The sarcasm drops out of his voice for exactly one sentence.',choices:[{label:'Don’t tease him. Help.',to:'vials',spark:3,rivalry:0,insight:2},{label:'“You could have just told me.”',to:'vials',spark:1,rivalry:1,insight:2}]},
-vials:{chapter:3,title:'Chapter III — Scent Cipher',text:'A hidden page appears under the scent of vanilla and smoke. It points beneath the city—to an abandoned rail platform sealed decades ago. Rowan: “Absolutely not.” You: already putting on your coat.',choices:[
-{label:'Invite him like you know he’s coming.',to:'platform',spark:3,rivalry:1,insight:1},{label:'Tell him he can stay behind.',to:'platform',spark:1,rivalry:3,insight:1},{label:'Plan first. Check the old maps.',to:'platform',spark:1,rivalry:0,insight:3}]},
-platform:{chapter:4,title:'Chapter IV — Platform Nine',text:'The tunnel is colder than expected. Your flashlight catches silver lettering on the wall. Rowan reaches for your wrist before you step across a broken tile, then forgets to let go immediately.',choices:[
-{label:'Look at his hand. Then at him.',to:'door',spark:4,rivalry:0,insight:0},{label:'“Careful. Someone might think you like me.”',to:'door',spark:3,rivalry:2,insight:0},{label:'Study the silver lettering.',to:'door',spark:1,rivalry:0,insight:3}]},
-door:{chapter:5,title:'Chapter V — The Velvet Door',text:'The final lock has three recesses: fruit, flower, base. A perfume key. You recognize the structure immediately. Rowan glances at you. “This part is yours.”',choices:[
-{label:'Build the accord together.',to:'finale',spark:3,rivalry:0,insight:2,req:{perfumery:3}},{label:'Trust your instincts and choose alone.',to:'finale',spark:1,rivalry:2,insight:2,req:{knowledge:14}},{label:'Make Rowan admit you were useful first.',to:'finale',spark:3,rivalry:3,insight:0}]},
-finale:{chapter:6,title:'Finale — Ink & Ashes',text:'Behind the door is no treasure, exactly—just the missing catalog, letters, and proof that the collection was meant to be shared, not hidden. Rowan reads the final page twice. When he looks up, the fight has gone out of his expression.',choices:[{label:'“So. Still think I’m a bad idea?”',to:'end',spark:4,rivalry:1,insight:0},{label:'Quietly take his hand.',to:'end',spark:4,rivalry:0,insight:1},{label:'“We make a good team. Unfortunately.”',to:'end',spark:3,rivalry:2,insight:1}]}
-};
-
-const HOME_ACTIONS=[
-{id:'skincare',emoji:'🧴',name:'Skincare deep dive',cost:1,time:1,desc:'Confidence + knowledge; chance to learn a scent note.',skill:'focus',stats:{confidence:2,knowledge:1}},
-{id:'read',emoji:'📖',name:'Read one chapter (lie)',cost:1,time:1,desc:'Knowledge + lore XP. Books in your collection boost it.',skill:'lore',stats:{knowledge:2,curiosity:1}},
-{id:'piano',emoji:'🎹',name:'Piano session',cost:1,time:1,desc:'Launches the rhythm memory minigame.',special:'piano'},
-{id:'bake',emoji:'🧁',name:'Bake something',cost:2,time:1,desc:'Launches Bake Rush; sell or keep the result.',special:'bake'},
-{id:'game',emoji:'🎮',name:'Cozy game rabbit hole',cost:1,time:1,desc:'Creativity + inspiration; sometimes unlocks an Arcade token.',skill:'focus',stats:{creativity:2}},
-{id:'reset',emoji:'🧺',name:'Tiny room reset',cost:1,time:1,desc:'Discipline + coins + pet affection. Zero whole-house nonsense.',skill:'focus',stats:{discipline:2}}
+const KEEPSAKES = [
+  ['🧥','Burgundy Window Jacket','Earned from the First Window'],
+  ['🧴','House Signature No. 01','Your first official Velvet House scent'],
+  ['🍰','Midnight Tasting Card','Bea wrote “acceptable” and underlined it twice'],
+  ['🗝️','Brass Archive Key','Recovered from the room behind the room'],
+  ['🌙','Moonlight House Sign','Proof that the doors are officially open']
 ];
 
-const DISTRICT_ACTIONS={
-market:[
-{id:'thrift',emoji:'🧥',name:'Thrift hunt',desc:'Pick a rack, inspect finds, maybe haggle.',special:'thrift',cost:1,time:1},
-{id:'discount',emoji:'🛒',name:'Discount aisle roulette',desc:'Cheap random item or useful crafting supplies.',special:'discount',cost:1,time:1},
-{id:'jules',emoji:'💬',name:'Talk to Jules',desc:'Friendship + collecting XP.',special:'npc',npc:'jules',cost:1,time:1}
-],
-arcade:[
-{id:'arcadegame',emoji:'🕹️',name:'Arcade cabinet',desc:'Risk coins for prizes and inspiration.',special:'arcade',cost:1,time:1},
-{id:'pianoarcade',emoji:'🎹',name:'Rhythm machine',desc:'Harder piano pattern, better rewards.',special:'pianoHard',cost:1,time:1},
-{id:'nova',emoji:'💅',name:'Find Nova',desc:'Friendship + styling XP.',special:'npc',npc:'nova',cost:1,time:1}
-],
-glasshouse:[
-{id:'atelier',emoji:'🧪',name:'Visit the perfume atelier',desc:'Unlock notes and take perfume commissions.',special:'atelier',cost:1,time:1},
-{id:'conservatory',emoji:'🌼',name:'Conservatory walk',desc:'Curiosity + inspiration + floral note chance.',special:'conservatory',cost:1,time:1},
-{id:'mina',emoji:'💬',name:'Talk to Mina',desc:'Friendship + perfumery XP.',special:'npc',npc:'mina',cost:1,time:1}
-],
-archive:[
-{id:'research',emoji:'🔎',name:'Research a strange index',desc:'Knowledge + lore + story clue.',special:'research',cost:1,time:1},
-{id:'rarebook',emoji:'📚',name:'Browse rare shelves',desc:'Chance at uncommon/rare books.',special:'rarebook',cost:1,time:1},
-{id:'bea',emoji:'💬',name:'Talk to Bea',desc:'Friendship + lore XP.',special:'npc',npc:'bea',cost:1,time:1}
-],
-night:[
-{id:'nightshop',emoji:'✨',name:'Legendary vendor',desc:'Rerolls shop with stronger rarity odds.',special:'nightshop',cost:1,time:1},
-{id:'oddjob',emoji:'🎟️',name:'Take a strange commission',desc:'Harder commission, much better pay.',special:'oddjob',cost:1,time:1},
-{id:'mystery',emoji:'🌘',name:'Follow the velvet lanterns',desc:'Random encounter. Could be amazing. Could be dumb.',special:'mystery',cost:1,time:1}
-]};
-
-function defaultState(){return {
-version:2,started:false,day:1,period:0,coins:95,energy:8,maxEnergy:8,inspiration:3,level:1,xp:0,perkPoints:0,
-stats:{confidence:3,curiosity:3,discipline:3,creativity:3,knowledge:3},
-skills:{perfumery:{xp:0,lvl:1},styling:{xp:0,lvl:1},baking:{xp:0,lvl:1},music:{xp:0,lvl:1},collecting:{xp:0,lvl:1},lore:{xp:0,lvl:1},social:{xp:0,lvl:1},focus:{xp:0,lvl:1}},
-perks:[],inventory:['old_romance','burg_tee','flare_jeans','brown_dunks','mirror','burg_blanket'],outfit:{top:null,bottom:null,shoes:null,bag:null,accessory:null},decor:{desk:null,wall:'mirror',textile:'burg_blanket',light:null,curio:null},homeLevel:1,
-notes:['Vanilla','Marshmallow','Pear','Jasmine','Amber','Musk'],perfumes:[],recipes:[],selectedNotes:[],
-friendship:{jules:0,mina:0,bea:0,nova:0,rowan:0},pets:{oakley:8,cat:6},
-story:{node:'start',chapter:1,spark:0,rivalry:0,insight:0,finished:false,ending:null,history:[]},
-shop:[],shopDistrict:'market',district:'market',studioTab:'perfume',collectionFilter:'all',styleTheme:0,styleSubmittedDay:0,lastStyleScore:0,
-quests:{daily:[],weekly:null},commissions:[],messages:[{day:1,from:'Velvet City',text:'Your after-hours life has been gamified. This seems healthy enough.'}],feed:[{day:1,text:'Save created. The city lights are on.'}],
-achievements:[],flags:{coffeeDay:0,petCareDay:0,migrated:false,eventClaimed:[],season:1},
-lifetime:{actions:0,bought:0,spent:0,earned:0,blends:0,styles:0,bakes:0,commissions:0,storyChoices:0,lastBakeQuality:0},lastView:'home'
-}}
-
-function deepMerge(base,extra){if(!extra||typeof extra!=='object')return base;for(const k of Object.keys(extra)){if(extra[k]&&typeof extra[k]==='object'&&!Array.isArray(extra[k])&&base[k]&&typeof base[k]==='object'&&!Array.isArray(base[k]))base[k]=deepMerge(base[k],extra[k]);else base[k]=extra[k]}return base}
-function migrateOld(){try{const old=JSON.parse(localStorage.getItem(OLD_SAVE_KEY)||'null');if(!old)return null;let n=defaultState();n.started=!!old.flags?.started;n.day=old.day||1;n.coins=old.coins??95;n.energy=Math.min(old.energy??8,10);n.maxEnergy=Math.max(8,old.maxEnergy||8);n.level=old.level||1;n.xp=old.xp||0;if(old.stats)n.stats={...n.stats,...old.stats};n.flags.migrated=true;n.feed.unshift({day:n.day,text:'✨ Your original Velvet Hour save was migrated into After Dark.'});const nameMap=Object.fromEntries(ITEMS.map(i=>[i.name,i.id]));(old.inventory||[]).forEach(x=>{const id=nameMap[x.name];if(id&&!n.inventory.includes(id))n.inventory.push(id)});n.perfumes=old.perfumes||[];n.recipes=old.recipes||[];n.notes=[...new Set([...(old.notes||[]),...n.notes])];return n}catch(e){return null}}
-function load(){try{const raw=localStorage.getItem(SAVE_KEY);if(raw)return deepMerge(defaultState(),JSON.parse(raw));const m=migrateOld();return m||defaultState()}catch(e){return defaultState()}}
-let S=load();
-function save(){localStorage.setItem(SAVE_KEY,JSON.stringify(S))}
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__to);window.__to=setTimeout(()=>t.classList.remove('show'),1900)}
-function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modal').classList.add('show')}
-function closeModal(){document.getElementById('modal').classList.remove('show')}
-function addFeed(text){S.feed.unshift({day:S.day,text});S.feed=S.feed.slice(0,45)}
-function msg(from,text){S.messages.unshift({day:S.day,from,text});S.messages=S.messages.slice(0,20)}
-function earn(n){S.coins+=n;if(n>0)S.lifetime.earned+=n}
-function spend(n){if(S.coins<n)return false;S.coins-=n;S.lifetime.spent+=n;return true}
-function eventToday(){return EVENTS[((S.day-1)%28)+1]||null}
-function weekday(){return WEEK[(S.day-1)%7]}
-function seasonDay(){return ((S.day-1)%28)+1}
-function hasPerk(id){return S.perks.includes(id)}
-function item(id){return ITEMS.find(x=>x.id===id)}
-function owns(id){return S.inventory.includes(id)}
-function addItem(id){if(!owns(id)){S.inventory.push(id);const it=item(id);if(it){addFeed(`Found ${it.emoji} ${it.name} (${it.rarity}).`);toast(`${it.emoji} ${it.name}`)}return true}earn(8);addFeed('Duplicate converted into 8 coins.');return false}
-function decorBonuses(){let b={};Object.values(S.decor).filter(Boolean).forEach(id=>{const z=item(id)?.bonus||{};Object.entries(z).forEach(([k,v])=>b[k]=(b[k]||0)+v)});return b}
-function calcVibe(st=S){let v=st.inventory.reduce((a,id)=>a+(RARITY_VIBE[item(id)?.rarity]||2),0)+st.perfumes.reduce((a,p)=>a+Math.round((p.quality||50)/8),0)+st.recipes.length*6+st.achievements.length*4+st.homeLevel*8+Object.values(st.friendship).reduce((a,n)=>a+Math.floor(n/5),0);return Math.round(v)}
-function gainXP(n){S.xp+=n;while(S.xp>=S.level*55){S.xp-=S.level*55;S.level++;S.perkPoints++;if(S.level%2===0)S.maxEnergy++;S.energy=S.maxEnergy;addFeed(`✨ Level ${S.level}. +1 perk point${S.level%2===0?' and +1 max energy':''}.`);toast(`Level ${S.level}!`)}}
-function gainStat(k,n){S.stats[k]=(S.stats[k]||0)+n;gainXP(n*3);progressQuest('stat',n)}
-function skillNeed(lvl){return 20+lvl*18}
-function gainSkill(k,n){if(hasPerk('deep_focus')&&['perfumery','styling','baking','music','lore'].includes(k))n=Math.round(n*1.2);const sk=S.skills[k];sk.xp+=n;while(sk.xp>=skillNeed(sk.lvl)){sk.xp-=skillNeed(sk.lvl);sk.lvl++;gainXP(12);addFeed(`⬆️ ${tc(k)} reached level ${sk.lvl}.`);toast(`${tc(k)} Lv.${sk.lvl}`)}progressQuest('skill',n)}
-function energyCost(base){return S.period===3&&hasPerk('night_owl')?Math.max(1,base-1):base}
-function canAct(cost,time=1){if(!S.started){toast('Enter Velvet City first.');return false}if(S.period>=4){toast('Tonight is over. End the day.');return false}cost=energyCost(cost);if(S.energy<cost){toast('Not enough energy. End the day or find a boost.');return false}if(S.period+time>4){toast('Not enough time left tonight.');return false}S.energy-=cost;S.period+=time;S.lifetime.actions++;progressQuest('action',1);return true}
-function startGame(){S.started=true;if(!S.quests.daily.length)generateQuests();if(!S.shop.length)rollShop();if(!S.commissions.length)generateCommissions();addFeed('🌙 You step into Velvet City.');save();render()}
-function advanceTime(){if(!S.started)return startGame();if(S.period<4){S.period++;addFeed(`Time passes. It is now ${S.period<4?PERIODS[S.period]:'past midnight'}.`);save();render()}else toast('End the day to continue.')}
-function sleep(){if(!S.started)return;const unclaimed=S.quests.daily.filter(q=>q.progress>=q.goal&&!q.claimed).length;S.day++;S.period=0;S.energy=S.maxEnergy+(decorBonuses().energy||0);S.inspiration=Math.min(12,S.inspiration+1);S.styleTheme=(S.day-1)%STYLE_THEMES.length;S.styleSubmittedDay=0;S.shop=[];generateQuests();generateCommissions();dailyMessage();dailyEvent();checkUnlockNotes();addFeed(`🌘 Day ${S.day} begins. ${weekday()} night.`);if(unclaimed)msg('Velvet City',`${unclaimed} finished quest reward${unclaimed>1?'s were':' was'} left unclaimed last night. Tragic, but we move.`);save();render();toast(`Day ${S.day} ✦ ${weekday()}`)}
-function dailyMessage(){const arr=[['Jules','I put aside something weird. Not saying what.'],['Bea','New books came in. One has sprayed edges, which I know is information you unfortunately value.'],['Mina','Today’s unsolicited opinion: vanilla is a structure, not a personality flaw.'],['Nova','I have a styling challenge for you and yes, I will judge you.'],['Rowan','If you are planning to trespass in the Archive again, at least bring a flashlight.']];if(Math.random()<.72){const [f,t]=pick(arr);msg(f,t)}}
-function dailyEvent(){const e=eventToday();if(e)msg('City Calendar',`${e.emoji} ${e.name}: ${e.desc}`)}
-
-function generateQuests(){const pool=[
-{id:'act4',name:'Do 4 actions',key:'action',goal:4,reward:24},{id:'spend35',name:'Spend 35 coins',key:'spend',goal:35,reward:28},{id:'skill30',name:'Gain 30 skill XP',key:'skill',goal:30,reward:26},{id:'stat5',name:'Gain 5 stat points',key:'stat',goal:5,reward:24},{id:'social2',name:'Socialize twice',key:'social',goal:2,reward:22},{id:'creative2',name:'Do 2 studio activities',key:'studio',goal:2,reward:25},{id:'city2',name:'Do 2 city actions',key:'city',goal:2,reward:24},{id:'mastery2',name:'Score B or better twice',key:'mastery',goal:2,reward:30},{id:'perfect1',name:'Earn an S-rank',key:'perfect',goal:1,reward:36}];S.quests.daily=[...pool].sort(()=>Math.random()-.5).slice(0,3).map(q=>({...q,progress:0,claimed:false}));if(!S.quests.weekly||S.day%7===1){const wp=[{name:'Collector Week',key:'buy',goal:5,reward:80},{name:'Creative Spiral',key:'studio',goal:7,reward:90},{name:'Social Battery Somehow',key:'social',goal:5,reward:75},{name:'Main Character Week',key:'action',goal:22,reward:95},{name:'Arcade Cut',key:'mastery',goal:8,reward:100}];S.quests.weekly={...pick(wp),progress:0,claimed:false,week:Math.ceil(S.day/7)}}}
-function progressQuest(key,n=1){S.quests.daily.forEach(q=>{if(q.key===key&&!q.claimed)q.progress=clamp(q.progress+n,0,q.goal)});const w=S.quests.weekly;if(w&&w.key===key&&!w.claimed)w.progress=clamp(w.progress+n,0,w.goal)}
-function claimDaily(i){const q=S.quests.daily[i];if(!q||q.claimed||q.progress<q.goal)return;q.claimed=true;earn(q.reward);S.inspiration++;gainXP(9);toast(`+${q.reward} coins`);addFeed(`Quest cleared: ${q.name}.`);save();render()}
-function claimWeekly(){const q=S.quests.weekly;if(!q||q.claimed||q.progress<q.goal)return;q.claimed=true;earn(q.reward);S.inspiration+=2;gainXP(25);toast(`Weekly cleared +${q.reward}`);addFeed(`Weekly quest cleared: ${q.name}.`);save();render()}
-
-function rollShop(mode='normal'){let pool=[...ITEMS];let count=eventToday()?.name==='Discount Store Restock'?8:6;if(mode==='night')count=7;const picked=[];while(picked.length<count&&pool.length){let idx=Math.floor(Math.random()*pool.length);let it=pool.splice(idx,1)[0];const rareBoost=(hasPerk('thrift_eye')?0.12:0)+(mode==='night'?0.22:0)+(eventToday()?.name==='Night Market Festival'?0.18:0);if(Math.random()<rareBoost&&['Common','Uncommon'].includes(it.rarity)){const hi=pool.filter(x=>['Rare','Epic','Legendary'].includes(x.rarity));if(hi.length)it=pick(hi)}if(!picked.some(x=>x.id===it.id))picked.push({...it,sold:false})}S.shop=picked}
-function shopDiscount(it){let d=hasPerk('coupon_brain')?.10:0;if(eventToday()?.name==='Thrift Sidewalk Sale'&&S.district==='market')d+=15;if(eventToday()?.name==='Sunday Reset Market'&&it.type==='decor')d+=15;if(eventToday()?.name==='Book Swap'&&it.type==='book')d+=20;return d}
-function buyShop(i){const x=S.shop[i];if(!x||x.sold)return;const price=Math.ceil(x.price*(1-shopDiscount(x)/100));if(!spend(price)){toast('Not enough coins. Fake capitalism wins this round.');return}x.sold=true;addItem(x.id);S.lifetime.bought++;progressQuest('buy',1);progressQuest('spend',price);gainSkill('collecting',8);friend('jules',S.district==='market'?1:0);checkAchievements();save();render()}
-
-function doHome(id){const a=HOME_ACTIONS.find(x=>x.id===id);if(!a)return;if(a.special==='piano')return startPiano(false);if(a.special==='bake')return startBake();if(!canAct(a.cost,a.time))return;Object.entries(a.stats||{}).forEach(([k,v])=>gainStat(k,v));gainSkill(a.skill||'focus',10);if(id==='game'){S.inspiration=Math.min(12,S.inspiration+rand(1,2));if(Math.random()<.2)earn(6)}if(id==='reset'){earn(rand(3,10));S.pets.oakley=clamp(S.pets.oakley+1,0,100);S.pets.cat=clamp(S.pets.cat+1,0,100)}if(id==='skincare'&&Math.random()<.16)unlockRandomNote();if(id==='read'&&hasPerk('bookworm'))gainStat('knowledge',2);maybeEncounter();checkAchievements();save();render()}
-
-function selectDistrict(id){const d=DISTRICTS.find(x=>x.id===id);if(!d?.unlock(S)){toast('That district is still locked.');return}S.district=id;S.shopDistrict=id;S.shop=[];rollShop(id==='night'?'night':'normal');save();renderCity()}
-function doCity(id){const a=(DISTRICT_ACTIONS[S.district]||[]).find(x=>x.id===id);if(!a)return;if(['thrift','discount','arcade','pianoHard','atelier','conservatory','research','rarebook','nightshop','oddjob','mystery','npc'].includes(a.special)){if(a.special==='thrift')return startThrift();if(a.special==='pianoHard')return startPiano(true);if(a.special==='npc')return talkNpc(a.npc);if(!canAct(a.cost,a.time))return;progressQuest('city',1);switch(a.special){
-case'discount':discountRoulette();break;case'arcade':arcadeGame();break;case'atelier':atelierVisit();break;case'conservatory':gainStat('curiosity',2);S.inspiration+=2;gainSkill('perfumery',6);if(Math.random()<.25)unlockRandomNote('floral');break;case'research':gainStat('knowledge',3);gainSkill('lore',14);S.story.insight++;friend('rowan',1);break;case'rarebook':rareBookFind();break;case'nightshop':rollShop('night');S.inspiration++;toast('Legendary vendor stock rolled.');break;case'oddjob':generateOddCommission();break;case'mystery':mysteryEncounter();break}maybeEncounter(.15);checkAchievements();save();render()}}
-function discountRoulette(){const r=Math.random();if(r<.55){const cheap=ITEMS.filter(x=>x.price<=25);addItem(pick(cheap).id)}else if(r<.8){earn(rand(12,25));toast('Found a suspiciously good coupon stash.')}else{S.inspiration+=2;toast('+2 inspiration. Somehow.')}gainSkill('collecting',8)}
-function arcadeGame(){const bet=6;if(!spend(bet)){earn(bet);toast('Arcade refunded your last 6 coins out of pity.');return}const win=Math.random()+S.skills.focus.lvl*.04;if(win>.62){const p=rand(14,30);earn(p);S.inspiration++;toast(`Jackpot-ish! +${p} coins`)}else toast('The claw machine wins again. Rude.');gainSkill('focus',8)}
-function atelierVisit(){gainSkill('perfumery',10);friend('mina',1);if(Math.random()<.45)unlockRandomNote();else{S.inspiration+=2;toast('+2 inspiration from smelling expensive things.')}}
-function rareBookFind(){const books=ITEMS.filter(x=>x.type==='book'&&!owns(x.id));if(books.length&&Math.random()<.65)addItem(pick(books).id);else{gainSkill('lore',12);gainStat('knowledge',2);toast('No collectible, but you found excellent marginalia.')}}
-function generateOddCommission(){const c={id:'odd'+Date.now(),type:pick(['perfume','style','bake']),title:'Night Market Special',difficulty:4,reward:rand(70,105),deadline:S.day+2,done:false,odd:true};S.commissions.unshift(c);toast('Strange commission added.')} 
-function mysteryEncounter(){const opts=[()=>{earn(30);toast('A vendor overpays for a curio. +30')},()=>{S.inspiration+=4;toast('+4 inspiration from a completely inexplicable performance.')},()=>{unlockRandomNote();gainSkill('perfumery',10)},()=>{const locked=ITEMS.filter(x=>!owns(x.id)&&['Epic','Legendary'].includes(x.rarity));if(locked.length)addItem(pick(locked).id)}];pick(opts)()}
-
-function startThrift(){if(!canAct(1,1))return;progressQuest('city',1);const racks=[
-{name:'Denim Rack',emoji:'👖',pool:ITEMS.filter(x=>x.type==='wardrobe'&&['bottom','top'].includes(x.slot))},
-{name:'Accessories Bin',emoji:'👜',pool:ITEMS.filter(x=>x.type==='wardrobe'&&['bag','accessory','shoes'].includes(x.slot))},
-{name:'Home Shelf',emoji:'🪞',pool:ITEMS.filter(x=>x.type==='decor'||x.type==='curio')}
-];window.__racks=racks;openModal(`<h2>🧥 Thrift Hunt</h2><p class="muted">Pick one section. You get one serious dig through the chaos.</p><div class="actions">${racks.map((r,i)=>`<button class="action" onclick="thriftRack(${i})"><span class="emoji">${r.emoji}</span><b>${r.name}</b><small>${r.pool.length} possible finds</small></button>`).join('')}</div>`)}
-function thriftRack(i){const r=window.__racks[i];let found=pick(r.pool);let rarityRoll=Math.random()+(hasPerk('thrift_eye')?.12:0)+S.skills.collecting.lvl*.02;if(rarityRoll>.86){const hi=r.pool.filter(x=>['Epic','Legendary'].includes(x.rarity));if(hi.length)found=pick(hi)}const base=Math.max(5,Math.floor(found.price*.62));window.__thriftFind={...found,thriftPrice:base};openModal(`<h2>${found.emoji} ${found.name}</h2><p>${found.rarity} • ${found.tags.join(' • ')}</p><p class="muted">Tag says <b>${base} coins</b>. You can buy it, haggle, or walk away like a person with restraint.</p><div class="hero-row"><button class="btn" onclick="buyThrift(false)">Buy ${base} 🪙</button><button class="btn secondary" onclick="haggle()">Try to haggle</button><button class="btn ghost" onclick="closeModal()">Walk away</button></div>`)}
-function haggle(){const f=window.__thriftFind;const chance=.42+S.stats.confidence*.012+S.skills.collecting.lvl*.025;if(Math.random()<Math.min(.82,chance)){f.thriftPrice=Math.max(4,Math.floor(f.thriftPrice*.72));openModal(`<h2>😌 Successful little menace</h2><p>Jules stares at you for a long second. “Fine. ${f.thriftPrice}.”</p><button class="btn" onclick="buyThrift(true)">Take the win — ${f.thriftPrice} 🪙</button>`)}else{f.thriftPrice=Math.ceil(f.thriftPrice*1.08);openModal(`<h2>💀 Absolutely not</h2><p>Jules: “Now it’s ${f.thriftPrice} because you annoyed me.”</p><button class="btn secondary" onclick="buyThrift(true)">…fine</button><button class="btn ghost" onclick="closeModal()">Leave with dignity</button>`)}}
-function buyThrift(){const f=window.__thriftFind;if(!spend(f.thriftPrice)){toast('Not enough coins.');return}addItem(f.id);S.lifetime.bought++;progressQuest('buy',1);progressQuest('spend',f.thriftPrice);gainSkill('collecting',12);friend('jules',2);closeModal();checkAchievements();save();render()}
-
-function talkNpc(id){if(!canAct(1,1))return;progressQuest('city',1);progressQuest('social',1);gainSkill('social',9);friend(id,2);const n=NPCS.find(x=>x.id===id);const lines={jules:['You spend ten minutes ranking the weirdest objects people donate.','Jules teaches you the difference between “vintage” and “someone’s basement.”'],mina:['Mina makes you smell three musks until you can tell them apart. Barely.','You debate whether marshmallow is a note or a lifestyle.'],bea:['Bea gives you a book recommendation with the phrase “trust me, he gets worse first.”','You discuss sprayed edges with the seriousness of monetary policy.'],nova:['Nova has strong opinions about magnetic cat-eye polish.','You build a fake outfit for a fake event and somehow take it seriously.'],rowan:['Rowan says your archive technique is “chaotic.” You say his is “boring.”','You argue about a footnote for seven straight minutes. Neither of you leaves.']};openModal(`<h2>${n.emoji} ${n.name}</h2><p>${pick(lines[id]||['You hang out for a bit.'])}</p><p class="muted">Friendship +${hasPerk('charm')?3:2}</p><button class="btn" onclick="closeModal()">Cute</button>`);save();render()}
-function friend(id,n){n+=hasPerk('charm')&&n>0?1:0;S.friendship[id]=clamp((S.friendship[id]||0)+n,0,100);if(S.friendship[id]===10)msg(NPCS.find(x=>x.id===id)?.name||id,'Okay, you’re officially a regular now.');if(id==='rowan'){}checkAchievements()}
-
-function toggleNote(n){if(!S.notes.includes(n)){toast('That note is locked.');return}const i=S.selectedNotes.indexOf(n);if(i>=0)S.selectedNotes.splice(i,1);else if(S.selectedNotes.length<3)S.selectedNotes.push(n);else toast('Three notes max. Top • heart • base works best.');renderStudio()}
-function blendPerfume(){if(S.selectedNotes.length!==3){toast('Pick exactly 3 notes.');return}const free=eventToday()?.name==='Perfume Workshop';if(!free&&S.inspiration<1){toast('Need 1 inspiration.');return}if(!canAct(1,1))return;if(!free)S.inspiration--;progressQuest('studio',1);const sel=[...S.selectedNotes];const rec=PERFUME_RECIPES.find(r=>r.notes.every(n=>sel.includes(n)));const roles=sel.map(n=>NOTES[n].role);let q=52+S.skills.perfumery.lvl*4+(new Set(roles).size===3?12:0)+(hasPerk('trained_nose')?8:0);const fams=sel.map(n=>NOTES[n].family);if(hasPerk('gourmand_bias')&&fams.filter(x=>x==='gourmand').length>=2)q+=12;if(rec)q+=10;q=clamp(q+rand(-8,8),35,100);const name=rec?.name||generatePerfumeName(sel);const p={id:Date.now(),name,notes:sel,quality:q,rarity:rec?.rarity||(q>88?'Epic':q>72?'Rare':'Uncommon'),desc:rec?.desc||`${fams.join(' • ')} experiment`,emoji:'🧴'};S.perfumes.push(p);S.lifetime.blends++;if(rec&&!S.recipes.includes(rec.name)){S.recipes.push(rec.name);toast(`✨ Formula discovered: ${rec.name}`);gainXP(18)}gainSkill('perfumery',16);gainStat('creativity',1);S.selectedNotes=[];checkCommissions('perfume',p);checkAchievements();save();render();openModal(`<h2>🧴 ${p.name}</h2><p><b>Quality ${p.quality}/100</b> • ${p.rarity}</p><p class="muted">${p.notes.join(' + ')}</p><p>${p.desc}</p><button class="btn" onclick="closeModal()">Bottle it</button>`) }
-function generatePerfumeName(sel){const a=['Velvet','Sugar','Silver','Midnight','Soft','Cherry','Static','Moonlit','Coffee','After'];const b=['Hour','Cloud','Kiss','Skin','Bloom','No. 8','Weather','Crush','Secret','Signal'];return `${pick(a)} ${pick(b)}`}
-function unlockRandomNote(family=null){const locked=Object.keys(NOTES).filter(n=>!S.notes.includes(n)&&(!family||NOTES[n].family===family));if(!locked.length)return false;const eligible=locked.filter(n=>NOTES[n].level<=S.skills.perfumery.lvl+2);const n=pick(eligible.length?eligible:locked);S.notes.push(n);toast(`${NOTES[n].emoji} Note unlocked: ${n}`);addFeed(`Perfume note unlocked: ${n}.`);return true}
-function checkUnlockNotes(){Object.keys(NOTES).forEach(n=>{if(!S.notes.includes(n)&&NOTES[n].level<=Math.ceil(S.skills.perfumery.lvl/2)+1&&Math.random()<.05)S.notes.push(n)})}
-
-function startPiano(hard=false){if(!canAct(1,1))return;progressQuest('studio',1);const len=hard?6+Math.min(3,S.skills.music.lvl):4+Math.min(3,S.skills.music.lvl);const seq=Array.from({length:len},()=>rand(1,4));window.__piano={seq,input:[],hard};openModal(`<h2>🎹 ${hard?'Moonlit Rhythm':'Piano Memory'}</h2><p class="muted">Memorize this pattern. Then repeat it using the four keys.</p><div class="center" style="font-size:28px;letter-spacing:8px;margin:18px 0">${seq.map(x=>'●').join(' ')}</div><button class="btn" onclick="showPianoPattern()">Show pattern</button>`)}
-function showPianoPattern(){const g=window.__piano;openModal(`<h2>🎹 Memorize</h2><div class="center" style="font-size:34px;letter-spacing:10px;margin:20px 0">${g.seq.join(' ')}</div><button class="btn" onclick="pianoInputScreen()">I got it</button>`)}
-function pianoInputScreen(){window.__piano.input=[];openModal(`<h2>🎹 Repeat it</h2><p id="pianoProgress" class="muted">0 / ${window.__piano.seq.length}</p><div class="hero-row" style="justify-content:center">${[1,2,3,4].map(n=>`<button class="btn secondary" style="font-size:22px;min-width:58px" onclick="pianoKey(${n})">${n}</button>`).join('')}</div>`)}
-function pianoKey(n){const g=window.__piano;g.input.push(n);const idx=g.input.length-1;if(g.seq[idx]!==n){gainSkill('music',5);openModal(`<h2>🎹 Close!</h2><p>You made it ${idx} note${idx===1?'':'s'} in. The pattern was <b>${g.seq.join(' ')}</b>.</p><button class="btn secondary" onclick="closeModal()">Next time</button>`);save();render();return}const p=document.getElementById('pianoProgress');if(p)p.textContent=`${g.input.length} / ${g.seq.length}`;if(g.input.length===g.seq.length){const reward=(g.hard?22:12)+(eventToday()?.name==='Moonlit Arcade Tournament'?15:0);earn(reward);S.inspiration+=g.hard?2:1;gainSkill('music',g.hard?22:15);gainStat('discipline',1);openModal(`<h2>🎹 Nailed it</h2><p>Perfect pattern. +${reward} coins, +${g.hard?2:1} inspiration.</p><button class="btn" onclick="closeModal()">Extremely talented</button>`);checkAchievements();save();render()}}
-
-const BAKE_RECIPES=[
-{name:'Carrot Loaf',emoji:'🥕',steps:['grate','mix dry','mix wet','fold','bake','frost'],pay:30},{name:'Brownie Bites',emoji:'🍫',steps:['melt','mix wet','mix dry','fold','bake','cool'],pay:28},{name:'Vanilla Cupcakes',emoji:'🧁',steps:['cream','mix eggs','mix dry','fold','bake','frost'],pay:32},{name:'Chocolate Loaf',emoji:'🍞',steps:['mix dry','mix wet','fold','bake','cool','glaze'],pay:29}
-];
-function startBake(){if(!canAct(2,1))return;progressQuest('studio',1);openModal(`<h2>🧁 Bake Rush</h2><p class="muted">Choose a recipe, then put its steps in order. Better baking skill = more forgiveness.</p><div class="actions">${BAKE_RECIPES.map((r,i)=>`<button class="action" onclick="beginBake(${i})"><span class="emoji">${r.emoji}</span><b>${r.name}</b><small>Base sale: ${r.pay} coins</small></button>`).join('')}</div>`)}
-function beginBake(i){const r=BAKE_RECIPES[i];const shuffled=[...r.steps].sort(()=>Math.random()-.5);window.__bake={recipe:r,remaining:shuffled,chosen:[],mistakes:0,ignored:false};renderBakeGame()}
-function renderBakeGame(){const g=window.__bake;openModal(`<h2>${g.recipe.emoji} ${g.recipe.name}</h2><p class="muted">Tap the steps in the correct order.</p><div class="chips">${g.remaining.map((s,i)=>`<button class="chip" onclick="bakeStep(${i})">${tc(s)}</button>`).join('')}</div><div class="divider"></div><p class="small">Your sequence: ${g.chosen.join(' → ')||'…'}</p><p class="small muted">Mistakes: ${g.mistakes}</p>`) }
-function bakeStep(i){const g=window.__bake;const s=g.remaining[i];const expected=g.recipe.steps[g.chosen.length];if(s!==expected){if(hasPerk('mise')&&!g.ignored){g.ignored=true;toast('Mise en Place saved that mistake.')}else g.mistakes++;toast('Not quite — try another step.');renderBakeGame();return}g.chosen.push(s);g.remaining.splice(i,1);if(!g.remaining.length)return finishBake();renderBakeGame()}
-function finishBake(){const g=window.__bake;let q=clamp(92+S.skills.baking.lvl*2-g.mistakes*14+rand(-5,6),35,100);let pay=Math.round(g.recipe.pay*(.65+q/100));if(q>=90&&hasPerk('perfect_batch'))pay=Math.round(pay*1.25);earn(pay);S.lifetime.bakes++;S.lifetime.lastBakeQuality=Math.max(S.lifetime.lastBakeQuality||0,q);gainSkill('baking',18);gainStat('creativity',2);checkCommissions('bake',{name:g.recipe.name,quality:q});openModal(`<h2>${q>=90?'✨':'🧁'} ${g.recipe.name}</h2><p><b>Quality ${q}/100</b></p><p>${q>=90?'Ridiculously good. Cream cheese frosting diplomacy achieved.':q>=70?'Very respectable. Would absolutely eat.':'A little chaotic, but edible is a genre.'}</p><p class="muted">Sold extras for ${pay} coins.</p><button class="btn" onclick="closeModal()">Nice</button>`);checkAchievements();save();render()}
-
-function chooseStudio(tab){S.studioTab=tab;save();renderStudio()}
-function startScentPuzzle(){const pool=S.notes;const target=pick(pool);const hints=[`Family: ${NOTES[target].family}`,`Role: ${NOTES[target].role}`,`Emoji clue: ${NOTES[target].emoji}`];window.__scent={target,hints:1};openModal(`<h2>🔎 Scent Match</h2><p>Guess the hidden note.</p><p class="muted">Hint: ${hints[0]}</p><div class="chips">${pool.map(n=>`<button class="chip" onclick="guessScent('${n}')">${n}</button>`).join('')}</div>`) }
-function guessScent(n){const g=window.__scent;if(n===g.target){earn(14);gainSkill('perfumery',8);S.inspiration++;openModal(`<h2>✨ Correct — ${n}</h2><p>+14 coins, +1 inspiration.</p><button class="btn" onclick="closeModal()">My nose knows</button>`);save();render()}else{g.hints++;const h=[`Family: ${NOTES[g.target].family}`,`Role: ${NOTES[g.target].role}`,`Emoji clue: ${NOTES[g.target].emoji}`];if(g.hints>3){openModal(`<h2>It was ${g.target}</h2><p>${NOTES[g.target].emoji} ${h.join(' • ')}</p><button class="btn secondary" onclick="closeModal()">Rude</button>`)}else{toast('Nope. Another hint unlocked.');openModal(`<h2>🔎 Scent Match</h2><p class="muted">${h.slice(0,g.hints).join('<br>')}</p><div class="chips">${S.notes.map(x=>`<button class="chip" onclick="guessScent('${x}')">${x}</button>`).join('')}</div>`)}}}
-
-function equipWardrobe(id){const it=item(id);if(!it||it.type!=='wardrobe')return;S.outfit[it.slot]=S.outfit[it.slot]===id?null:id;save();renderStyle()}
-function clearOutfit(){Object.keys(S.outfit).forEach(k=>S.outfit[k]=null);save();renderStyle()}
-function judgeOutfit(){if(S.styleSubmittedDay===S.day){toast('You already submitted today’s look.');return}const ids=Object.values(S.outfit).filter(Boolean);if(ids.length<3){toast('Equip at least 3 pieces.');return}const theme=STYLE_THEMES[S.styleTheme];let score=35+ids.length*5+(hasPerk('style_instinct')?8:0)+S.skills.styling.lvl*3;const tags=ids.flatMap(id=>item(id).tags);theme.tags.forEach(t=>{const c=tags.filter(x=>x===t).length;score+=c*(hasPerk('accessorize')&&item(S.outfit.accessory)?.tags.includes(t)?10:7)});const unique=new Set(tags);if(unique.size>=6)score+=5;score=clamp(score+rand(-5,6),30,100);S.styleSubmittedDay=S.day;S.lastStyleScore=score;S.lifetime.styles++;const reward=Math.round(score/3)*(eventToday()?.name==='Velvet Fashion Challenge'?2:1);earn(reward);gainSkill('styling',18);gainStat('confidence',score>=75?2:1);progressQuest('studio',1);checkCommissions('style',{name:theme.name,quality:score,tags});checkAchievements();save();render();openModal(`<h2>${score>=90?'🔥 Editorial behavior':score>=75?'✨ Very cute':'🪩 We have a point of view'}</h2><p><b>${score}/100</b> on “${theme.name}”</p><p class="muted">Matched tags: ${theme.tags.filter(t=>tags.includes(t)).join(', ')||'none, somehow'}</p><p>+${reward} coins</p><button class="btn" onclick="closeModal()">Accept judgment</button>`) }
-
-function equipDecor(id){const it=item(id);if(!it||it.type!=='decor')return;if(decorSlotsUnlocked().includes(it.slot)){S.decor[it.slot]=S.decor[it.slot]===id?null:id;save();renderApartment()}else toast('Upgrade your apartment to unlock that decor slot.')}
-function decorSlotsUnlocked(){return ['wall','textile',...(S.homeLevel>=2?['desk']:[]),...(S.homeLevel>=3?['light']:[]),...(S.homeLevel>=4?['curio']:[])]}
-function upgradeHome(){if(S.homeLevel>=5){toast('Apartment maxed. Please stop renovating.');return}const price=80+S.homeLevel*65;if(!spend(price)){toast(`Need ${price} coins.`);return}progressQuest('spend',price);S.homeLevel++;S.maxEnergy+=S.homeLevel===3?1:0;addFeed(`🏠 Apartment upgraded to level ${S.homeLevel}.`);checkAchievements();save();render()}
-function petAction(pet){if(!canAct(1,1))return;const k=pet==='oakley'?'oakley':'cat';const gain=rand(3,6);S.pets[k]=clamp(S.pets[k]+gain,0,100);gainStat('confidence',1);if(k==='oakley'&&Math.random()<.25){earn(8);toast('Oakley found absolutely nothing useful. You got 8 coins anyway.')}else toast(`+${gain} ${k==='oakley'?'Oakley':'cat'} affection`);checkAchievements();save();render()}
-
-function storyChoice(i){if(S.story.finished)return;const node=STORY[S.story.node],c=node.choices[i];if(!c)return;if(c.req){if(c.req.insight&&S.story.insight<c.req.insight){toast(`Need ${c.req.insight} Insight.`);return}if(c.req.perfumery&&S.skills.perfumery.lvl<c.req.perfumery){toast(`Need Perfumery Lv.${c.req.perfumery}.`);return}if(c.req.knowledge&&S.stats.knowledge<c.req.knowledge){toast(`Need ${c.req.knowledge} Knowledge.`);return}}S.story.spark+=c.spark||0;S.story.rivalry+=c.rivalry||0;S.story.insight+=c.insight||0;S.story.history.push(c.label);S.lifetime.storyChoices++;progressQuest('social',1);friend('rowan',2);gainSkill('lore',8);if(c.to==='end'){finishStory()}else{S.story.node=c.to;S.story.chapter=STORY[c.to]?.chapter||S.story.chapter}save();renderPeople();checkAchievements()}
-function finishStory(){S.story.finished=true;let e='A Mutual Problem';if(S.story.spark>=14&&S.story.rivalry>=8)e='Enemies, Unfortunately In Love';else if(S.story.spark>=16)e='The Soft Ending';else if(S.story.insight>=13)e='Partners in Marginalia';S.story.ending=e;friend('rowan',8);earn(65);addItem('foil_fantasy');addFeed(`📕 Ink & Ashes complete: ${e}.`);toast('Story ending unlocked ✨')}
-
-function generateCommissions(){const templates=[
-{type:'perfume',title:'Make a gourmand date-night perfume',difficulty:2,reward:50,req:'quality 70+'},
-{type:'style',title:'Style a dark Y2K look',difficulty:2,reward:45,req:'score 72+'},
-{type:'bake',title:'Bake something for the bookstore',difficulty:2,reward:42,req:'quality 72+'},
-{type:'perfume',title:'Create an elegant floral skin scent',difficulty:3,reward:62,req:'quality 80+'},
-{type:'style',title:'Style a silver after-dark look',difficulty:3,reward:58,req:'score 80+'},
-{type:'bake',title:'Bring the Archive a peace offering',difficulty:3,reward:56,req:'quality 80+'}
-];S.commissions=[...templates].sort(()=>Math.random()-.5).slice(0,3).map((x,i)=>({...x,id:`${S.day}_${i}`,deadline:S.day+rand(2,4),done:false}))}
-function checkCommissions(type,result){S.commissions.forEach(c=>{if(c.done||c.type!==type||S.day>c.deadline)return;const threshold=c.difficulty>=4?88:c.difficulty===3?80:72;const q=result.quality||0;if(q>=threshold){c.done=true;let r=c.reward+(hasPerk('trained_nose')&&type==='perfume'?8:0);earn(r);S.lifetime.commissions++;gainXP(16);toast(`Commission complete +${r}`);addFeed(`🎟️ Commission complete: ${c.title}.`)}})}
-
-function maybeEncounter(chance=.22){if(Math.random()>chance)return;const options=[
-{title:'🐕 Oakley emergency',text:'Oakley requires immediate investigation of a completely normal sound.',choices:[['Investigate together',()=>{S.pets.oakley+=2;gainStat('confidence',1)}],['Delegate this matter',()=>{gainStat('discipline',1)}]]},
-{title:'💸 Surprise coupon',text:'A receipt coughs up a coupon you forgot existed.',choices:[['Take the win',()=>earn(12)],['Save it for later',()=>{S.inspiration++;gainSkill('collecting',4)}]]},
-{title:'🧠 Hyperfixation portal',text:'You search one tiny question and now you know the entire manufacturing process.',choices:[['Keep reading',()=>{gainStat('knowledge',2);S.energy=Math.max(0,S.energy-1)}],['Close the tab heroically',()=>gainStat('discipline',2)]]},
-{title:'🍫 Snack diplomacy',text:'A strategically timed snack could improve negotiations with reality.',choices:[['Snack',()=>{S.energy=Math.min(S.maxEnergy,S.energy+1);spend(2)}],['I’m fine',()=>gainStat('discipline',1)]]}
-];const e=pick(options);window.__enc=e;openModal(`<h2>${e.title}</h2><p>${e.text}</p><div class="choices">${e.choices.map((c,i)=>`<button class="choice" onclick="resolveEncounter(${i})">${c[0]}</button>`).join('')}</div>`) }
-function resolveEncounter(i){const c=window.__enc.choices[i];c[1]();closeModal();save();render()}
-
-function buyPerk(id){const p=PERKS.find(x=>x.id===id);if(!p||hasPerk(id))return;const [skill,lvl]=p.req;if(S.skills[skill].lvl<lvl){toast(`Need ${tc(skill)} Lv.${lvl}.`);return}if(S.perkPoints<p.cost){toast('Need a perk point.');return}S.perkPoints-=p.cost;S.perks.push(id);toast(`Perk unlocked: ${p.name}`);save();renderProgress()}
-function checkAchievements(){const unlock=id=>{if(!S.achievements.includes(id)){S.achievements.push(id);const a=ACHIEVEMENTS.find(x=>x.id===id);earn(15);addFeed(`🏆 ${a.name} unlocked. +15 coins.`);toast(`🏆 ${a.name}`)}};if(S.lifetime.bought>=1)unlock('firstbuy');if(S.lifetime.blends>=1)unlock('firstblend');if(S.recipes.length)unlock('formula');if(S.lastStyleScore>=80)unlock('style80');if((S.lifetime.lastBakeQuality||0)>=90)unlock('bake90');if(Math.max(...Object.values(S.friendship))>=10)unlock('friend10');if(new Set(S.inventory).size>=20)unlock('collector20');if(calcVibe()>=200)unlock('vibe200');if(S.day>=14)unlock('day14');if(S.coins>=350)unlock('rich');if(S.notes.length===Object.keys(NOTES).length)unlock('allnotes');if(S.story.finished)unlock('storyend');if(S.homeLevel>=4)unlock('home4');if(S.pets.oakley>=50)unlock('oakley50');if(S.inventory.some(id=>item(id)?.rarity==='Legendary'))unlock('legendary')}
-
-function render(){checkAchievements();renderTop();renderTabs();renderHome();renderCity();renderStudio();renderStyle();renderApartment();renderPeople();renderProgress();renderCalendar();renderNav();save()}
-function renderTop(){document.getElementById('coins').textContent=S.coins;document.getElementById('energy').textContent=S.energy;document.getElementById('maxEnergy').textContent=S.maxEnergy+(decorBonuses().energy||0);document.getElementById('inspiration').textContent=S.inspiration;document.getElementById('day').textContent=S.day;document.getElementById('greeting').textContent=S.started?`${weekday()} night • ${S.period<4?PERIODS[S.period]:'past midnight'} • Vibe ${calcVibe()}`:'Velvet City is waiting, Mak.';document.getElementById('heroText').textContent=S.started?`Level ${S.level} • Season ${S.flags.season} • ${eventToday()?eventToday().emoji+' '+eventToday().name:'No city event tonight'} • There is no optimal route. Pick whatever sounds fun.`:'This is the bigger version: a collection RPG, life sim, outfit game, perfume lab, story game, pet sim, minigame bundle, and fake economy in one.';document.getElementById('startBtn').style.display=S.started?'none':'inline-block';document.getElementById('nextBlockBtn').disabled=!S.started||S.period>=4;document.getElementById('sleepBtn').disabled=!S.started}
-function renderTabs(){const t=[['home','🏠 Home'],['city','🛍️ City'],['studio','🧪 Studio'],['style','🪩 Style'],['apartment','🏠 Apartment'],['people','💌 People'],['progress','💿 Progress'],['calendar','🗓️ Calendar'],['settings','⚙️ Settings']];document.getElementById('tabs').innerHTML=t.map(([id,l])=>`<button class="tab ${S.lastView===id?'active':''}" onclick="switchView('${id}')">${l}</button>`).join('')}
-function switchView(id){S.lastView=id;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===id));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick')?.includes(`'${id}'`)));renderNav();save()}
-function renderHome(){const ev=eventToday();document.getElementById('tonightSummary').innerHTML=`<div class="qtop"><div><b>${weekday()} • Day ${S.day}</b><div class="small muted">${S.period<4?PERIODS[S.period]:'Past midnight'} • ${4-S.period} time block${4-S.period===1?'':'s'} left</div></div><span class="tag">${ev?ev.emoji+' '+ev.name:'ordinary night'}</span></div>${ev?`<p class="small muted">${ev.desc}</p>`:''}`;document.getElementById('homeActions').innerHTML=HOME_ACTIONS.map(a=>`<button class="action" onclick="doHome('${a.id}')" ${S.period>=4?'disabled':''}><span class="emoji">${a.emoji}</span><b>${a.name}</b><small>${a.desc}<br>⚡${energyCost(a.cost)} • ⏳${a.time}</small></button>`).join('');document.getElementById('dailyQuests').innerHTML=S.quests.daily.length?S.quests.daily.map((q,i)=>`<div class="quest ${q.claimed?'done':''}"><div class="qtop"><b>${q.name}</b><span class="tag">${q.progress}/${q.goal}</span></div><div class="small muted">${q.reward} coins</div>${q.progress>=q.goal&&!q.claimed?`<button class="btn" style="margin-top:7px" onclick="claimDaily(${i})">Claim</button>`:''}</div>`).join(''):'<p class="muted small">Enter the city to generate quests.</p>';const w=S.quests.weekly;document.getElementById('weeklyQuest').innerHTML=w?`<div class="quest ${w.claimed?'done':''}"><div class="qtop"><b>${w.name}</b><span class="tag">${w.progress}/${w.goal}</span></div><div class="small muted">${w.reward} coins • Week ${w.week}</div>${w.progress>=w.goal&&!w.claimed?'<button class="btn gold" style="margin-top:7px" onclick="claimWeekly()">Claim weekly</button>':''}</div>`:'';document.getElementById('stats').innerHTML=Object.entries(S.stats).map(([k,v])=>`<div class="stat"><b>${{confidence:'💋',curiosity:'🔎',discipline:'📌',creativity:'✨',knowledge:'🧠'}[k]} ${v}</b><span>${tc(k)}</span></div>`).join('');document.getElementById('levelInfo').innerHTML=`Level <b>${S.level}</b> • ${S.xp}/${S.level*55} XP • Perk points ${S.perkPoints}. Apartment and perks can change your action economy.`;document.getElementById('messages').innerHTML=S.messages.map(m=>`<div class="feed-item"><span class="time">Day ${m.day} • ${m.from}</span><br>${m.text}</div>`).join('')||'<span class="muted">No messages.</span>';document.getElementById('feed').innerHTML=S.feed.map(f=>`<div class="feed-item"><span class="time">Day ${f.day}</span><br>${f.text}</div>`).join('')}
-function renderCity(){const d=DISTRICTS.find(x=>x.id===S.district)||DISTRICTS[0];document.getElementById('districts').innerHTML=DISTRICTS.map(x=>{const u=x.unlock(S);return `<button class="action ${S.district===x.id?'selected':''} ${u?'':'locked'}" onclick="selectDistrict('${x.id}')"><span class="emoji">${x.emoji}</span><b>${x.name}</b><small>${u?'Open':x.id==='arcade'?'Unlock at level 3':x.id==='glasshouse'?'Unlock at 85 Vibe':x.id==='archive'?'Unlock with knowledge/story':'Unlock at 170 Vibe'}</small></button>`}).join('');document.getElementById('districtTitle').textContent=`${d.emoji} ${d.name}`;document.getElementById('districtDesc').textContent=d.desc;document.getElementById('cityActions').innerHTML=(DISTRICT_ACTIONS[d.id]||[]).map(a=>`<button class="action" onclick="doCity('${a.id}')"><span class="emoji">${a.emoji}</span><b>${a.name}</b><small>${a.desc}<br>⚡${energyCost(a.cost)} • ⏳${a.time}</small></button>`).join('');if(!S.shop.length)rollShop(d.id==='night'?'night':'normal');document.getElementById('shop').innerHTML=S.shop.map((x,i)=>{const p=Math.ceil(x.price*(1-shopDiscount(x)/100));return `<div class="shopitem ${x.sold?'sold':''}"><div style="font-size:26px">${x.emoji}</div><b>${x.name}</b><div class="tiny muted">${tc(x.type)} • ${x.rarity}</div><div class="tiny muted">${x.tags.join(' • ')}</div><div class="price">${p} 🪙 ${p<x.price?`<span class="tiny muted"><s>${x.price}</s></span>`:''}</div><button class="btn secondary" ${x.sold?'disabled':''} onclick="buyShop(${i})">${x.sold?'Sold':'Buy'}</button></div>`}).join('')}
-function renderStudio(){const tabs=[['perfume','🧪 Perfume'],['scent','🔎 Scent Match'],['baking','🧁 Baking'],['piano','🎹 Piano']];document.getElementById('studioTabs').innerHTML=tabs.map(([id,l])=>`<button class="chip ${S.studioTab===id?'on':''}" onclick="chooseStudio('${id}')">${l}</button>`).join('');const c=document.getElementById('studioContent');if(S.studioTab==='perfume'){c.innerHTML=`<div class="grid"><div class="span-7"><h3>🧪 Perfume Lab</h3><p class="small muted">Choose 3 notes. A top + heart + base structure improves quality. Hidden formulas reward exact combinations.</p><div class="chips">${Object.keys(NOTES).map(n=>`<button class="chip ${S.selectedNotes.includes(n)?'on':''} ${S.notes.includes(n)?'':'locked'}" onclick="toggleNote('${n}')">${NOTES[n].emoji} ${n}${S.notes.includes(n)?'':' 🔒'}</button>`).join('')}</div><div class="hero-row"><button class="btn" onclick="blendPerfume()">Blend • ${eventToday()?.name==='Perfume Workshop'?'0':'1'} 💡</button><span class="small muted">${S.selectedNotes.join(' + ')||'No notes selected'}</span></div></div><div class="span-5"><h3>📓 Formula book</h3>${PERFUME_RECIPES.map(r=>`<div class="quest"><b>${S.recipes.includes(r.name)?'✓ '+r.name:'???'}</b><div class="tiny muted">${S.recipes.includes(r.name)?r.notes.join(' + '):r.rarity+' undiscovered formula'}</div></div>`).join('')}</div><div class="span-12"><h3>🧴 Your shelf</h3><div class="inventory">${S.perfumes.length?S.perfumes.slice().reverse().map(p=>`<div class="item"><span class="rarity">${p.rarity}</span><div class="big">🧴</div><b>${p.name}</b><small>${p.notes.join(' • ')}</small><div class="badge">Q${p.quality}</div></div>`).join(''):'<p class="muted">No blends yet.</p>'}</div></div></div>`}else if(S.studioTab==='scent'){c.innerHTML=`<h3>🔎 Scent Match</h3><p class="muted">A quick deduction game. Guess a note from family, role, and emoji clues. Correct guesses pay coins + perfumery XP.</p><button class="btn" onclick="startScentPuzzle()">Start puzzle</button>`}else if(S.studioTab==='baking'){c.innerHTML=`<h3>🧁 Bake Rush</h3><p class="muted">Put recipe steps in order. Mistakes lower quality; quality controls sale price and commission success.</p><button class="btn" onclick="startBake()">Bake something • 2 ⚡</button><p class="small muted">Baking Lv.${S.skills.baking.lvl} • Perks can forgive mistakes or boost perfect batches.</p>`}else{c.innerHTML=`<h3>🎹 Piano Memory</h3><p class="muted">Memorize short number sequences and repeat them. Higher Music level gradually lengthens the pattern.</p><div class="hero-row"><button class="btn" onclick="startPiano(false)">Practice • 1 ⚡</button><button class="btn secondary" onclick="startPiano(true)">Hard mode • 1 ⚡</button></div><p class="small muted">Music Lv.${S.skills.music.lvl}</p>`}}
-function renderStyle(){const t=STYLE_THEMES[S.styleTheme];document.getElementById('styleChallenge').innerHTML=`<h4>${t.name}</h4><p class="small muted">${t.desc}</p><div class="chips">${t.tags.map(x=>`<span class="chip on">${x}</span>`).join('')}</div><div class="divider"></div><div class="small">${S.styleSubmittedDay===S.day?`Submitted today: <b>${S.lastStyleScore}/100</b>`:'Not submitted yet.'}</div>`;const slots=['top','bottom','shoes','bag','accessory'];document.getElementById('outfitSlots').innerHTML=slots.map(s=>{const id=S.outfit[s],it=id?item(id):null;return `<div class="slot"><div class="slotname">${s}</div>${it?`<div style="font-size:23px">${it.emoji}</div><b>${it.name}</b><small class="muted">${it.tags.join(' • ')}</small>`:'<div class="muted small">Empty</div>'}</div>`}).join('');const w=S.inventory.map(item).filter(x=>x?.type==='wardrobe');document.getElementById('wardrobe').innerHTML=w.length?w.map(x=>`<button class="item ${S.outfit[x.slot]===x.id?'equipped':''}" onclick="equipWardrobe('${x.id}')"><span class="rarity">${x.rarity}</span><div class="big">${x.emoji}</div><b>${x.name}</b><small>${x.slot} • ${x.tags.join(' • ')}</small></button>`).join(''):'<p class="muted">No wardrobe yet.</p>'}
-function renderApartment(){document.getElementById('homeLevel').textContent=S.homeLevel;document.getElementById('homeLevelDesc').textContent=['','Cozy starter. Wall + textile slots.','Desk slot unlocked.','Light slot + extra max energy.','Curio slot unlocked.','Penthouse-ish. Maximum fake adulthood.'][S.homeLevel];const price=80+S.homeLevel*65;document.getElementById('upgradeHomeBtn').textContent=S.homeLevel>=5?'Max level':`Upgrade • ${price} 🪙`;document.getElementById('upgradeHomeBtn').disabled=S.homeLevel>=5;const slots=['desk','wall','textile','light','curio'];document.getElementById('decorSlots').innerHTML=slots.map(s=>{const unlocked=decorSlotsUnlocked().includes(s),id=S.decor[s],it=id?item(id):null;return `<div class="slot ${unlocked?'':'locked-panel'}"><div class="slotname">${s}</div>${!unlocked?'<div class="small muted">Locked</div>':it?`<div style="font-size:24px">${it.emoji}</div><b>${it.name}</b><small class="muted">${Object.entries(it.bonus||{}).map(([k,v])=>`+${v} ${k}`).join(' • ')}</small>`:'<div class="small muted">Empty</div>'}</div>`}).join('');const d=S.inventory.map(item).filter(x=>x?.type==='decor');document.getElementById('decorInventory').innerHTML=d.length?d.map(x=>`<button class="item ${S.decor[x.slot]===x.id?'equipped':''}" onclick="equipDecor('${x.id}')"><span class="rarity">${x.rarity}</span><div class="big">${x.emoji}</div><b>${x.name}</b><small>${x.slot} • ${Object.entries(x.bonus||{}).map(([k,v])=>`+${v} ${k}`).join(' ')}</small></button>`).join(''):'<p class="muted">No decor yet.</p>';document.getElementById('oakley').innerHTML=petPanel('oakley','🐕','Oakley',S.pets.oakley);document.getElementById('cat').innerHTML=petPanel('cat','🐈','Cat',S.pets.cat)}
-function petPanel(id,e,n,v){return `<div class="qtop"><div style="font-size:32px">${e}</div><b>${v}/100 affection</b></div><div class="bar green"><i style="width:${v}%"></i></div><p class="small muted">Higher affection unlocks achievements and occasional gifts/chaos.</p><button class="btn secondary" onclick="petAction('${id}')">Hang out • 1 ⚡</button>`}
-function renderPeople(){document.getElementById('npcs').innerHTML=NPCS.map(n=>`<div class="npc"><div class="qtop"><div><span class="face">${n.emoji}</span> <span class="name">${n.name}</span></div><span class="heart">♥ ${S.friendship[n.id]}</span></div><div class="small muted">${n.role}</div><p class="small">${n.blurb}</p><div class="bar"><i style="width:${Math.min(100,S.friendship[n.id])}%"></i></div></div>`).join('');document.getElementById('spark').textContent=S.story.spark;document.getElementById('rivalry').textContent=S.story.rivalry;document.getElementById('insight').textContent=S.story.insight;const b=document.getElementById('storyBox');if(S.story.finished){b.innerHTML=`<h3>✨ ${S.story.ending}</h3><div class="storytext">The catalog is finished, the Archive is furious about at least three procedural violations, and Rowan keeps finding reasons to ask whether you’re coming by later. Extremely suspicious.</div>`}else{const n=STORY[S.story.node];b.innerHTML=`<h3>${n.title}</h3><div class="storytext">${n.text}</div><div class="choices">${n.choices.map((c,i)=>{let lock='';if(c.req?.insight&&S.story.insight<c.req.insight)lock=`Need ${c.req.insight} Insight`;if(c.req?.perfumery&&S.skills.perfumery.lvl<c.req.perfumery)lock=`Need Perfumery Lv.${c.req.perfumery}`;if(c.req?.knowledge&&S.stats.knowledge<c.req.knowledge)lock=`Need ${c.req.knowledge} Knowledge`;return `<button class="choice" onclick="storyChoice(${i})" ${lock?'disabled':''}>${c.label}${lock?`<br><span class="tiny">🔒 ${lock}</span>`:''}</button>`}).join('')}</div>`}}
-function renderProgress(){const v=calcVibe();document.getElementById('vibeScore').textContent=v;document.getElementById('vibeBar').style.width=`${Math.min(100,(v%100))}%`;document.getElementById('vibeDesc').textContent=v<85?'Glasshouse Row unlocks at 85 Vibe.':v<170?'Night Market unlocks at 170 Vibe.':'The city has accepted that you are the problem.';document.getElementById('skills').innerHTML=Object.entries(S.skills).map(([k,sk])=>`<div class="skillrow"><b>${tc(k)}</b><div class="bar"><i style="width:${Math.min(100,sk.xp/skillNeed(sk.lvl)*100)}%"></i></div><span>Lv.${sk.lvl}</span></div>`).join('');document.getElementById('perkPoints').textContent=S.perkPoints;document.getElementById('perks').innerHTML=PERKS.map(p=>{const own=hasPerk(p.id),[sk,lvl]=p.req,ready=S.skills[sk].lvl>=lvl;return `<div class="perk ${own?'owned':''}"><b>${own?'✓ ':''}${p.name}</b><div class="small muted">${p.desc}</div><div class="cost">Requires ${tc(sk)} Lv.${lvl} • ${p.cost} point</div>${!own?`<button class="btn secondary" style="margin-top:7px" ${!ready||S.perkPoints<p.cost?'disabled':''} onclick="buyPerk('${p.id}')">Unlock</button>`:''}</div>`}).join('');document.getElementById('achievements').innerHTML=ACHIEVEMENTS.map(a=>`<div class="item" style="opacity:${S.achievements.includes(a.id)?1:.42}"><div class="big">${a.emoji}</div><b>${a.name}</b><small>${a.desc}</small>${S.achievements.includes(a.id)?'<div class="badge good">Unlocked</div>':''}</div>`).join('');const types=[['all','All'],['wardrobe','Wardrobe'],['decor','Decor'],['book','Books'],['curio','Curios'],['perfume','Perfume']];document.getElementById('collectionFilters').innerHTML=types.map(([id,l])=>`<button class="chip ${S.collectionFilter===id?'on':''}" onclick="setCollectionFilter('${id}')">${l}</button>`).join('');renderMasterCollection()}
-function setCollectionFilter(f){S.collectionFilter=f;save();renderProgress()}
-function renderMasterCollection(){let data=S.inventory.map(item).filter(Boolean).map(x=>({...x,owned:true}));if(S.collectionFilter!=='all')data=data.filter(x=>x.type===S.collectionFilter);if(S.collectionFilter==='perfume')data=S.perfumes.map(p=>({name:p.name,emoji:'🧴',rarity:p.rarity,type:'perfume',tags:p.notes,owned:true}));document.getElementById('masterCollection').innerHTML=data.length?data.map(x=>`<div class="item"><span class="rarity">${x.rarity}</span><div class="big">${x.emoji}</div><b>${x.name}</b><small>${x.type} • ${(x.tags||[]).join(' • ')}</small></div>`).join(''):'<p class="muted">Nothing in this category yet.</p>'}
-function renderCalendar(){const sd=seasonDay();document.getElementById('calendarGrid').innerHTML=Array.from({length:28},(_,i)=>i+1).map(d=>{const e=EVENTS[d];return `<div class="daycell ${d===sd?'today':''} ${e?'event':''} ${d<sd?'past':''}"><b>${d}</b><br>${WEEK[(d-1)%7]}${e?`<br>${e.emoji}`:''}</div>`}).join('');const upcoming=Object.entries(EVENTS).filter(([d])=>+d>=sd).slice(0,6);document.getElementById('upcomingEvents').innerHTML=upcoming.map(([d,e])=>`<div class="quest"><div class="qtop"><b>${e.emoji} Day ${d}</b><span class="tag">${e.name}</span></div><div class="small muted">${e.desc}</div></div>`).join('');document.getElementById('commissions').innerHTML=S.commissions.map(c=>`<div class="item ${c.done?'equipped':''}"><span class="rarity">Day ${c.deadline}</span><div class="big">${c.type==='perfume'?'🧴':c.type==='style'?'🪩':'🧁'}</div><b>${c.title}</b><small>${c.req||'quality 88+'}</small><div class="badge ${c.done?'good':'gold'}">${c.done?'Complete':c.reward+' 🪙'}</div></div>`).join('')||'<p class="muted">No commissions.</p>'}
-function renderNav(){const n=[['home','🏠','Home'],['city','🛍️','City'],['studio','🧪','Studio'],['people','💌','People'],['progress','💿','Progress']];document.getElementById('nav').innerHTML=n.map(([id,e,l])=>`<button class="${S.lastView===id?'active':''}" onclick="switchView('${id}')"><span>${e}</span>${l}</button>`).join('')}
-
-function exportSave(){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`velvet-hour-after-dark-day-${S.day}.json`;a.click();URL.revokeObjectURL(a.href);toast('Save exported')}
-document.getElementById('importFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{S=deepMerge(defaultState(),JSON.parse(r.result));save();render();switchView(S.lastView||'home');toast('Save imported ✨')}catch(err){toast('That save did not work.')}};r.readAsText(f)});
-function resetGame(){openModal(`<h2>Reset After Dark?</h2><p class="muted">This wipes your Velvet Hour progress on this browser. Export first if you might change your mind.</p><div class="hero-row"><button class="btn" onclick="confirmReset()">Reset it</button><button class="btn secondary" onclick="closeModal()">Cancel</button></div>`)}
-function confirmReset(){localStorage.removeItem(SAVE_KEY);S=defaultState();closeModal();render();switchView('home');toast('Fresh save started')}
-
-
-
-/* =========================================================
-   VELVET HOUR: AFTER DARK — ARCADE CUT
-   Every time/energy action now resolves through playable input.
-   ========================================================= */
-
-const MINI_NAMES={
-  skincare:'Ingredient Lab',read:'Archive Annotation',piano:'Piano Memory',pianoHard:'Moonlit Rhythm',bake:'Bake Rush',game:'Cozy Combo',reset:'Room Reset',
-  thrift:'Thrift Dig',discount:'Clearance Math',jules:'Conversation Read — Jules',arcade:'Neon Reflex',nova:'Conversation Read — Nova',atelier:'Note Pyramid',conservatory:'Glasshouse Trail',mina:'Conversation Read — Mina',research:'Archive Cipher',rarebook:'Rare Shelf',bea:'Conversation Read — Bea',nightshop:'Midnight Appraisal',oddjob:'Client Negotiation',mystery:'Lantern Maze',
-  perfume:'Accord Tuning',scent:'Scent Match',style:'Style Finish',oakley:'Oakley Treat Hunt',cat:'Cat Jurisdiction'
-};
-
-function ensureArcadeState(){
-  if(!S.mastery)S.mastery={};
-  if(typeof S.flow!=='number')S.flow=0;
-  if(typeof S.combo!=='number')S.combo=0;
-  if(typeof S.arcadeTickets!=='number')S.arcadeTickets=0;
-  if(!S.lifetime.minigames)S.lifetime.minigames=0;
-  if(!S.lifetime.perfectMinigames)S.lifetime.perfectMinigames=0;
-  if(!S.flags.arcadeCut)S.flags.arcadeCut=true;
-}
-ensureArcadeState();
-
-function gradeFor(score){return score>=96?'S':score>=88?'A':score>=76?'B':score>=62?'C':score>=45?'D':'F'}
-function starsFor(score){return score>=95?3:score>=78?2:score>=58?1:0}
-function masteryFor(key){ensureArcadeState();if(!S.mastery[key])S.mastery[key]={plays:0,best:0,total:0,stars:0};return S.mastery[key]}
-function recordMini(key,score){
-  ensureArcadeState();score=clamp(Math.round(score),0,100);const m=masteryFor(key);m.plays++;m.total+=score;m.best=Math.max(m.best,score);m.stars=Math.max(m.stars,starsFor(score));S.lifetime.minigames++;
-  if(score>=98)S.lifetime.perfectMinigames++;if(score>=76)progressQuest('mastery',1);if(score>=96)progressQuest('perfect',1);
-  const delta=score>=92?9:score>=80?6:score>=65?3:score>=50?1:-2;S.flow=clamp(S.flow+delta,0,100);S.combo=score>=80?S.combo+1:0;
-  return {score,grade:gradeFor(score),stars:m.stars,mult:.68+(score/100)*.52+Math.min(.15,S.flow/650)+(m.stars*.04),flowDelta:delta};
-}
-function miniReward(key,score,{coins=0,skill=null,skillXp=0,stats={},inspiration=0,feed=null}={}){
-  const r=recordMini(key,score);let paid=0;if(coins){paid=Math.max(0,Math.round(coins*r.mult));earn(paid)}
-  if(skill&&skillXp)gainSkill(skill,Math.max(2,Math.round(skillXp*(.7+r.score/170))));
-  Object.entries(stats).forEach(([k,v])=>{const amt=r.score>=85?v:r.score>=55?Math.max(1,Math.ceil(v*.6)):Math.max(0,Math.floor(v*.35));if(amt)gainStat(k,amt)});
-  if(inspiration){const inc=r.score>=80?inspiration:r.score>=55?Math.max(1,inspiration-1):0;S.inspiration=clamp(S.inspiration+inc,0,12)}
-  if(feed||r.score>=95)addFeed(feed||`🎯 ${MINI_NAMES[key]||tc(key)}: ${r.score}/100 (${r.grade}).`);
-  return {...r,paid};
-}
-function resultModal(key,r,extra=''){
-  openModal(`<div class="minigame"><div class="mini-head"><div><h2 style="margin:0">${MINI_NAMES[key]||tc(key)}</h2><div class="muted small">Mastery run complete</div></div><div class="grade">${r.grade}</div></div><div><b>${r.score}/100</b> • ${'★'.repeat(starsFor(r.score))}${'☆'.repeat(3-starsFor(r.score))} • Flow ${S.flow}%${S.combo>1?` • x${S.combo} hot streak`:''}</div><div class="flowline"><i style="width:${S.flow}%"></i></div>${extra}<button class="btn" onclick="closeModal()">Continue</button></div>`);
-  checkAchievements();save();render();
-}
-function actionStart(cost=1,time=1,city=false,studio=false){if(!canAct(cost,time))return false;if(city)progressQuest('city',1);if(studio)progressQuest('studio',1);return true}
-
-/* ----- Render wrappers: Flow + mastery ----- */
-const __renderTopBase=renderTop;
-renderTop=function(){ensureArcadeState();__renderTopBase();const f=document.getElementById('flow');if(f)f.textContent=S.flow};
-const __renderProgressBase=renderProgress;
-renderProgress=function(){ensureArcadeState();__renderProgressBase();const el=document.getElementById('masteryBoard');if(!el)return;const keys=Object.keys(MINI_NAMES).filter(k=>masteryFor(k).plays>0).sort((a,b)=>masteryFor(b).best-masteryFor(a).best);el.innerHTML=keys.length?keys.map(k=>{const m=masteryFor(k),avg=Math.round(m.total/m.plays);return `<div class="item"><span class="rarity">${m.plays} run${m.plays===1?'':'s'}</span><div class="big">${m.best>=95?'🏆':m.best>=80?'✨':'🎯'}</div><b>${MINI_NAMES[k]}</b><small>Best ${m.best} • Avg ${avg}</small><div class="badge ${m.best>=80?'good':''}">${'★'.repeat(m.stars)}${'☆'.repeat(3-m.stars)}</div></div>`}).join(''):'<p class="muted">Play an activity to start building mastery.</p>'};
-
-/* ----- HOME: route every passive action into a minigame ----- */
-doHome=function(id){const a=HOME_ACTIONS.find(x=>x.id===id);if(!a)return;if(a.special==='piano')return startPiano(false);if(a.special==='bake')return startBake();if(id==='skincare')return startSkincareMini();if(id==='read')return startReadMini();if(id==='game')return startCozyCombo();if(id==='reset')return startRoomReset()};
-
-const SKIN_Q=[
-  {i:'Glycerin',a:'Humectant',o:['Humectant','Occlusive','Exfoliant','Surfactant'],why:'Humectants help bind water in the skin.'},
-  {i:'Petrolatum',a:'Occlusive',o:['Antioxidant','Occlusive','Solvent','Retinoid'],why:'Petrolatum forms an occlusive layer that reduces water loss.'},
-  {i:'Salicylic Acid',a:'Exfoliant',o:['Emollient','Exfoliant','Fragrance','Preservative'],why:'Salicylic acid is a BHA exfoliant.'},
-  {i:'Ascorbic Acid',a:'Antioxidant',o:['Antioxidant','Surfactant','Occlusive','Chelator'],why:'Ascorbic acid is vitamin C and functions primarily as an antioxidant in skincare.'},
-  {i:'Adapalene',a:'Retinoid',o:['Humectant','Retinoid','Solvent','Silicone'],why:'Adapalene is a topical retinoid.'},
-  {i:'Squalane',a:'Emollient',o:['Emollient','Exfoliant','Surfactant','Colorant'],why:'Squalane is used mainly as a skin-softening emollient.'},
-  {i:'Water',a:'Solvent',o:['Solvent','Occlusive','Retinoid','Powder'],why:'Water is commonly the primary solvent/vehicle.'},
-  {i:'Cocamidopropyl Betaine',a:'Surfactant',o:['Antioxidant','Surfactant','Humectant','UV filter'],why:'It is a cleansing/foaming surfactant.'},
-  {i:'Ceramide NP',a:'Barrier lipid',o:['Barrier lipid','Exfoliant','Solvent','Fragrance'],why:'Ceramides are lipids that support the skin barrier.'},
-  {i:'Dimethicone',a:'Silicone/emollient',o:['Silicone/emollient','AHA','Retinoid','Surfactant'],why:'Dimethicone is a silicone used for slip, skin feel, and barrier support.'}
-];
-function startSkincareMini(){if(!actionStart(1,1))return;window.__skin={qs:[...SKIN_Q].sort(()=>Math.random()-.5).slice(0,4),i:0,correct:0};renderSkinQ()}
-function renderSkinQ(){const g=window.__skin,q=g.qs[g.i];openModal(`<div class="minigame"><div class="mini-head"><h2>🧴 Ingredient Lab</h2><span class="mini-score">${g.i+1}/${g.qs.length}</span></div><p>A product label gives you <b>${q.i}</b>. What is its best broad role here?</p><div class="choices">${[...q.o].sort(()=>Math.random()-.5).map(x=>`<button class="choice bigchoice" onclick="skinAnswer('${x.replaceAll("'","\\'")}')">${x}</button>`).join('')}</div></div>`)}
-function skinAnswer(x){const g=window.__skin,q=g.qs[g.i];if(x===q.a)g.correct++;toast(x===q.a?'✓ Correct':`Not quite — ${q.a}`);g.i++;if(g.i<g.qs.length)return renderSkinQ();const score=Math.round(g.correct/g.qs.length*100);const r=miniReward('skincare',score,{skill:'focus',skillXp:12,stats:{confidence:2,knowledge:2},inspiration:1});if(score>=75&&Math.random()<.35)unlockRandomNote();resultModal('skincare',r,`<p class="muted">${g.correct}/${g.qs.length} correct. Cosmetic chemistry confidence +${score>=75?'noticeable':'a little'}.</p>`) }
-
-const READ_Q=[
- {t:'A page says: “The lock answered only after the white flowers warmed against skin.” Which clue matters most?',a:'The white-floral scent',o:['The white-floral scent','The room temperature','The paper color']},
- {t:'A margin note reads: “Third bell, west stair, never the red door.” What is the safest inference?',a:'Avoid the red door',o:['Take the red door','Avoid the red door','Wait for four bells']},
- {t:'A character says, “I never said I trusted you.” Then hands over the only key. What changed?',a:'Behavior contradicts the words',o:['Nothing changed','Behavior contradicts the words','The key is probably fake']},
- {t:'An index marks every missing volume with a silver star except one with a black circle. What should you inspect first?',a:'The black-circle entry',o:['A random silver-star entry','The black-circle entry','The newest book']},
- {t:'A coded note repeats PEAR → JASMINE → AMBER. What structure does that resemble?',a:'Top → heart → base',o:['Base → top → heart','Top → heart → base','Heart → base → top']},
- {t:'Two witness notes disagree on the time but agree on a burgundy umbrella. Which detail is strongest?',a:'The shared umbrella detail',o:['The exact time from either witness','The shared umbrella detail','Neither note matters']}
-];
-function startReadMini(){if(!actionStart(1,1))return;window.__read={qs:[...READ_Q].sort(()=>Math.random()-.5).slice(0,3),i:0,correct:0};renderReadQ()}
-function renderReadQ(){const g=window.__read,q=g.qs[g.i];openModal(`<div class="minigame"><div class="mini-head"><h2>📖 Archive Annotation</h2><span class="mini-score">Clue ${g.i+1}/${g.qs.length}</span></div><div class="hintbox">${q.t}</div><p>What would you underline?</p><div class="choices">${[...q.o].sort(()=>Math.random()-.5).map(x=>`<button class="choice" onclick="readAnswer('${x.replaceAll("'","\\'")}')">${x}</button>`).join('')}</div></div>`)}
-function readAnswer(x){const g=window.__read,q=g.qs[g.i];if(x===q.a)g.correct++;toast(x===q.a?'Sharp read ✓':'That clue was weaker.');g.i++;if(g.i<g.qs.length)return renderReadQ();const score=Math.round(g.correct/g.qs.length*100);const r=miniReward('read',score,{skill:'lore',skillXp:14,stats:{knowledge:2,curiosity:1},inspiration:1});if(hasPerk('bookworm')&&score>=67)gainStat('knowledge',1);resultModal('read',r,`<p class="muted">${g.correct}/${g.qs.length} deductions landed.</p>`) }
-
-function startCozyCombo(){if(!actionStart(1,1))return;const icons=['🍒','💿','🧴','📚','🐆','☕'];const cards=[...icons,...icons].sort(()=>Math.random()-.5).map((v,i)=>({id:i,v,open:false,matched:false}));window.__memory={cards,first:null,lock:false,moves:0,matches:0};renderMemory()}
-function renderMemory(){const g=window.__memory;openModal(`<div class="minigame"><div class="mini-head"><h2>🎮 Cozy Combo</h2><span class="mini-score">Moves ${g.moves} • Pairs ${g.matches}/6</span></div><p class="muted">Match all six pairs in as few flips as you can.</p><div class="memory-board">${g.cards.map((c,i)=>`<button class="memory-card ${c.open?'open':''} ${c.matched?'matched':''}" onclick="memoryFlip(${i})" ${c.matched||g.lock?'disabled':''}>${c.open||c.matched?c.v:'✦'}</button>`).join('')}</div></div>`)}
-function memoryFlip(i){const g=window.__memory,c=g.cards[i];if(g.lock||c.open||c.matched)return;c.open=true;if(g.first===null){g.first=i;renderMemory();return}g.moves++;const a=g.cards[g.first];if(a.v===c.v){a.matched=c.matched=true;g.matches++;g.first=null;if(g.matches===6)return finishMemory();renderMemory()}else{g.lock=true;renderMemory();setTimeout(()=>{a.open=false;c.open=false;g.first=null;g.lock=false;renderMemory()},650)}}
-function finishMemory(){const g=window.__memory;const score=clamp(100-(g.moves-6)*7,35,100);const r=miniReward('game',score,{coins:8,skill:'focus',skillXp:12,stats:{creativity:2},inspiration:2});resultModal('game',r,`<p class="muted">Cleared in ${g.moves} moves. ${r.paid?`Found ${r.paid} coins in the digital couch cushions.`:''}</p>`) }
-
-const CLUTTER=[
- {e:'🧦',n:'lonely sock',z:'Laundry'},{e:'📄',n:'old receipt',z:'Trash'},{e:'🎮',n:'controller',z:'Desk'},{e:'🐕',n:'dog toy',z:'Pet'},{e:'🧴',n:'hand cream',z:'Desk'},{e:'🧺',n:'t-shirt',z:'Laundry'},{e:'🧻',n:'empty wrapper',z:'Trash'},{e:'🐈',n:'cat wand',z:'Pet'},{e:'✏️',n:'pen',z:'Desk'}
-];
-function startRoomReset(){if(!actionStart(1,1))return;window.__sort={items:[...CLUTTER].sort(()=>Math.random()-.5).slice(0,6),i:0,correct:0};renderSort()}
-function renderSort(){const g=window.__sort,x=g.items[g.i];openModal(`<div class="minigame"><div class="mini-head"><h2>🧺 Tiny Room Reset</h2><span class="mini-score">${g.i+1}/${g.items.length}</span></div><div class="sort-item">${x.e}</div><div style="text-align:center"><b>${tc(x.n)}</b></div><p class="muted" style="text-align:center">Where does it go?</p><div class="sort-zones">${['Laundry','Desk','Trash','Pet'].map(z=>`<button class="sort-zone" onclick="sortAnswer('${z}')">${z==='Laundry'?'🧺':z==='Desk'?'🗂️':z==='Trash'?'🗑️':'🐾'}<br><b>${z}</b></button>`).join('')}</div></div>`)}
-function sortAnswer(z){const g=window.__sort,x=g.items[g.i];if(z===x.z)g.correct++;toast(z===x.z?'✓ Put away':'That creates tomorrow’s problem.');g.i++;if(g.i<g.items.length)return renderSort();const score=Math.round(g.correct/g.items.length*100);const r=miniReward('reset',score,{coins:10,skill:'focus',skillXp:11,stats:{discipline:2},inspiration:1});S.pets.oakley=clamp(S.pets.oakley+(score>=80?2:1),0,100);S.pets.cat=clamp(S.pets.cat+(score>=80?2:1),0,100);resultModal('reset',r,`<p class="muted">${g.correct}/${g.items.length} items landed in the right zone. Tiny reset, not a moral referendum.</p>`) }
-
-/* ----- CITY router ----- */
-doCity=function(id){const a=(DISTRICT_ACTIONS[S.district]||[]).find(x=>x.id===id);if(!a)return;const s=a.special;if(s==='thrift')return startThrift();if(s==='pianoHard')return startPiano(true);if(s==='npc')return startNpcMini(a.npc);if(s==='discount')return startDiscountMini();if(s==='arcade')return startArcadeReflex();if(s==='atelier')return startAtelierMini();if(s==='conservatory')return startConservatoryMini();if(s==='research')return startResearchMini();if(s==='rarebook')return startRareBookMini();if(s==='nightshop')return startNightShopMini();if(s==='oddjob')return startOddJobMini();if(s==='mystery')return startMysteryMini()};
-
-function startDiscountMini(){if(!actionStart(1,1,true))return;window.__discount={round:0,correct:0,rounds:3};renderDiscountRound()}
-function makeDeals(){const unit=rand(4,11);let arr=[{q:1,p:unit+rand(0,4)},{q:2,p:unit*2+rand(-2,5)},{q:3,p:unit*3+rand(-4,7)}];arr=arr.map(x=>({...x,u:x.p/x.q}));return arr.sort(()=>Math.random()-.5)}
-function renderDiscountRound(){const g=window.__discount;g.deals=makeDeals();const best=Math.min(...g.deals.map(x=>x.u));g.best=g.deals.findIndex(x=>x.u===best);openModal(`<div class="minigame"><div class="mini-head"><h2>🛒 Clearance Math</h2><span class="mini-score">Round ${g.round+1}/${g.rounds}</span></div><p>Same mystery item, different bundle sizes. Which is cheapest <b>per item</b>?</p><div class="mini-grid">${g.deals.map((d,i)=>`<button class="mini-card" onclick="discountPick(${i})"><b>${d.q} for ${d.p} 🪙</b><small class="muted">No calculator because the fake store hates you.</small></button>`).join('')}</div></div>`)}
-function discountPick(i){const g=window.__discount;if(i===g.best)g.correct++;g.round++;toast(i===g.best?'Best unit price ✓':'Sneaky fake deal.');if(g.round<g.rounds)return renderDiscountRound();const score=Math.round(g.correct/g.rounds*100);const r=miniReward('discount',score,{coins:13,skill:'collecting',skillXp:10,stats:{knowledge:1}});if(score>=67){const cheap=ITEMS.filter(x=>x.price<=26);addItem(pick(cheap).id)}else if(score>=34)earn(6);resultModal('discount',r,`<p class="muted">${g.correct}/${g.rounds} bargains spotted.${score>=67?' You also found a clearance item.':''}</p>`) }
-
-const NPC_GAME={
- jules:[{p:'Jules holds up a scratched silver bag. “Vintage or trash?”',best:'Ask what makes it interesting',opts:['Ask what makes it interesting','Say trash immediately','Offer triple the tag price']},{p:'Jules says the best finds are always hiding under something ugly.',best:'Dig one layer deeper',opts:['Dig one layer deeper','Only inspect perfect displays','Leave immediately']}],
- mina:[{p:'Mina gives you three vanilla strips and asks what you notice first.',best:'Compare texture and warmth',opts:['Compare texture and warmth','Say they all smell identical','Pick the prettiest bottle']},{p:'Mina says a perfume is “too flat.”',best:'Ask about top/heart/base balance',opts:['Ask about top/heart/base balance','Add more of everything','Change the bottle color']}],
- bea:[{p:'Bea says, “He gets worse before he gets better.”',best:'Ask how much worse',opts:['Ask how much worse','Put the book back','Read the ending first']},{p:'Bea finds a note hidden in a used book.',best:'Check the surrounding pages',opts:['Check the surrounding pages','Throw it away','Assume it is a grocery list']}],
- nova:[{p:'Nova says the outfit needs one stronger decision.',best:'Choose a focal piece',opts:['Choose a focal piece','Add six unrelated accessories','Change everything at once']},{p:'Nova asks what makes cat-eye polish work.',best:'Magnetic pigment direction',opts:['Magnetic pigment direction','Extra-thick top coat','UV lamp color']}],
- rowan:[{p:'Rowan says your theory is impossible, but keeps rereading your note.',best:'Ask what part bothers him',opts:['Ask what part bothers him','Declare victory and leave','Hide the note']},{p:'Rowan hands you the archive key without comment.',best:'Notice the trust behind the gesture',opts:['Notice the trust behind the gesture','Call it meaningless','Lose the key immediately']}]
-};
-function startNpcMini(id){if(!actionStart(1,1,true))return;progressQuest('social',1);const qs=[...(NPC_GAME[id]||NPC_GAME.jules)].sort(()=>Math.random()-.5);window.__npcGame={id,qs,i:0,score:0};renderNpcGame()}
-function renderNpcGame(){const g=window.__npcGame,n=NPCS.find(x=>x.id===g.id),q=g.qs[g.i];openModal(`<div class="minigame"><div class="mini-head"><h2>${n?.emoji||'💬'} Read the Room</h2><span class="mini-score">${g.i+1}/${g.qs.length}</span></div><div class="hintbox">${q.p}</div><div class="choices">${[...q.opts].sort(()=>Math.random()-.5).map(x=>`<button class="choice" onclick="npcAnswer('${x.replaceAll("'","\\'")}')">${x}</button>`).join('')}</div></div>`)}
-function npcAnswer(x){const g=window.__npcGame,q=g.qs[g.i];if(x===q.best)g.score++;toast(x===q.best?'That landed ✓':'A little awkward. Survived.');g.i++;if(g.i<g.qs.length)return renderNpcGame();const score=Math.round(g.score/g.qs.length*100);const key=g.id;const r=miniReward(key,score,{skill:'social',skillXp:11,stats:{confidence:1}});friend(g.id,score>=80?3:score>=50?2:1);resultModal(key,r,`<p class="muted">Friendship gained based on how well you read the moment.</p>`) }
-
-function startArcadeReflex(){const bet=6;if(S.coins<bet){toast('Need 6 coins for the cabinet.');return}if(!actionStart(1,1,true))return;spend(bet);window.__reflex={round:0,total:0,pos:0,dir:1,target:rand(35,65),raf:null,last:performance.now()};renderReflex()}
-function renderReflex(){const g=window.__reflex;openModal(`<div class="minigame"><div class="mini-head"><h2>🕹️ Neon Reflex</h2><span class="mini-score">Round ${g.round+1}/3</span></div><p>Stop the light inside the green zone. Center hits score highest.</p><div class="meter-track"><div class="meter-zone" style="left:${g.target-9}%;width:18%"></div><div class="meter-dot" id="reflexDot" style="left:0%"></div></div><div class="meter-labels"><span>too soon</span><span>perfect</span><span>too late</span></div><button class="btn" onclick="stopReflex()">STOP</button></div>`);g.last=performance.now();if(g.raf)cancelAnimationFrame(g.raf);const tick=t=>{const dt=Math.min(40,t-g.last);g.last=t;g.pos+=g.dir*dt*.075;if(g.pos>=100){g.pos=100;g.dir=-1}if(g.pos<=0){g.pos=0;g.dir=1}const d=document.getElementById('reflexDot');if(d)d.style.left=g.pos+'%';g.raf=requestAnimationFrame(tick)};g.raf=requestAnimationFrame(tick)}
-function stopReflex(){const g=window.__reflex;if(g.raf)cancelAnimationFrame(g.raf);const dist=Math.abs(g.pos-g.target);const roundScore=clamp(Math.round(100-dist*4.2),0,100);g.total+=roundScore;toast(`${roundScore} point hit`);g.round++;if(g.round<3){g.pos=0;g.dir=1;g.target=rand(30,70);setTimeout(renderReflex,250);return}const score=Math.round(g.total/3);const r=miniReward('arcade',score,{coins:24,skill:'focus',skillXp:13,stats:{confidence:1},inspiration:2});S.arcadeTickets+=Math.max(1,Math.round(score/20));resultModal('arcade',r,`<p class="muted">Arcade tickets +${Math.max(1,Math.round(score/20))}. Net coin rewards scale with timing.</p>`) }
-
-function startAtelierMini(){if(!actionStart(1,1,true))return;const names=Object.keys(NOTES).sort(()=>Math.random()-.5).slice(0,5);window.__atelier={names,i:0,correct:0};renderAtelier()}
-function renderAtelier(){const g=window.__atelier,n=g.names[g.i];openModal(`<div class="minigame"><div class="mini-head"><h2>🧪 Note Pyramid</h2><span class="mini-score">${g.i+1}/${g.names.length}</span></div><div class="sort-item">${NOTES[n].emoji}</div><p style="text-align:center"><b>${n}</b></p><p class="muted" style="text-align:center">Where does this note sit in our simplified perfume structure?</p><div class="mini-grid">${['top','heart','base'].map(r=>`<button class="mini-card" onclick="atelierAnswer('${r}')"><b>${tc(r)}</b></button>`).join('')}</div></div>`)}
-function atelierAnswer(role){const g=window.__atelier,n=g.names[g.i];if(role===NOTES[n].role)g.correct++;toast(role===NOTES[n].role?'Correct layer ✓':`${n} is ${NOTES[n].role}`);g.i++;if(g.i<g.names.length)return renderAtelier();const score=Math.round(g.correct/g.names.length*100);const r=miniReward('atelier',score,{skill:'perfumery',skillXp:14,stats:{knowledge:1},inspiration:2});friend('mina',score>=80?2:1);if(score>=60)unlockRandomNote();resultModal('atelier',r,`<p class="muted">${g.correct}/${g.names.length} note roles identified.${score>=60?' Mina lets you sample a new material.':''}</p>`) }
-
-const FLOWERS=['🌹','🌼','🪻','🌷','🌸'];
-function startConservatoryMini(){if(!actionStart(1,1,true))return;const seq=Array.from({length:4+Math.min(2,S.skills.perfumery.lvl)},()=>pick(FLOWERS));window.__garden={seq,input:[]};openModal(`<div class="minigame"><h2>🌼 Glasshouse Trail</h2><p>Memorize the flower trail. You’ll retrace it after the mist rolls in.</p><div style="font-size:34px;letter-spacing:8px;text-align:center;margin:18px 0">${seq.join(' ')}</div><button class="btn" onclick="hideGardenTrail()">Enter the mist</button></div>`)}
-function hideGardenTrail(){const g=window.__garden;g.input=[];openModal(`<div class="minigame"><h2>🌫️ Retrace the Trail</h2><p class="muted">Tap the flowers in order.</p><div class="mini-grid">${FLOWERS.map(f=>`<button class="mini-card" style="font-size:28px;text-align:center" onclick="gardenPick('${f}')">${f}</button>`).join('')}</div><p id="gardenProgress" class="muted small">0/${g.seq.length}</p></div>`)}
-function gardenPick(f){const g=window.__garden;g.input.push(f);const idx=g.input.length-1;if(g.seq[idx]!==f){const score=Math.round(idx/g.seq.length*100);const r=miniReward('conservatory',score,{skill:'perfumery',skillXp:8,stats:{curiosity:1},inspiration:1});return resultModal('conservatory',r,`<p class="muted">You made it ${idx} steps before taking the scenic route.</p>`)}if(g.input.length===g.seq.length){const r=miniReward('conservatory',100,{skill:'perfumery',skillXp:14,stats:{curiosity:2},inspiration:2});if(Math.random()<.45)unlockRandomNote('floral');resultModal('conservatory',r,`<p class="muted">Perfect route. The greenhouse staff is mildly impressed.</p>`) }else{const p=document.getElementById('gardenProgress');if(p)p.textContent=`${g.input.length}/${g.seq.length}`}}
-
-const CIPHERS=[
- {s:'▲ ● ▲ ?',o:['●','▲','■'],a:'●',why:'alternating symbols'},
- {s:'■ ■ ● ■ ■ ?',o:['●','▲','■'],a:'●',why:'two squares, then one circle'},
- {s:'● ▲ ■ ● ▲ ?',o:['■','●','▲'],a:'■',why:'three-symbol repeat'},
- {s:'▲ ▲ ● ● ▲ ▲ ?',o:['●','■','▲'],a:'●',why:'pairs alternate'},
- {s:'■ ● ● ■ ● ● ?',o:['■','●','▲'],a:'■',why:'square + two circles'}
-];
-function startResearchMini(){if(!actionStart(1,1,true))return;window.__cipher={qs:[...CIPHERS].sort(()=>Math.random()-.5).slice(0,4),i:0,correct:0};renderCipher()}
-function renderCipher(){const g=window.__cipher,q=g.qs[g.i];openModal(`<div class="minigame"><div class="mini-head"><h2>🔎 Archive Cipher</h2><span class="mini-score">${g.i+1}/${g.qs.length}</span></div><div class="hintbox" style="font-size:28px;text-align:center;letter-spacing:8px">${q.s}</div><p>Which symbol completes the pattern?</p><div class="mini-grid">${q.o.map(x=>`<button class="mini-card" style="font-size:28px;text-align:center" onclick="cipherPick('${x}')">${x}</button>`).join('')}</div></div>`)}
-function cipherPick(x){const g=window.__cipher,q=g.qs[g.i];if(x===q.a)g.correct++;toast(x===q.a?'Pattern cracked ✓':`It follows ${q.why}.`);g.i++;if(g.i<g.qs.length)return renderCipher();const score=Math.round(g.correct/g.qs.length*100);const r=miniReward('research',score,{skill:'lore',skillXp:15,stats:{knowledge:3},inspiration:1});if(score>=75)S.story.insight++;friend('rowan',score>=75?2:1);resultModal('research',r,`<p class="muted">${g.correct}/${g.qs.length} ciphers solved.${score>=75?' +1 Ink & Ashes Insight.':''}</p>`) }
-
-function startRareBookMini(){if(!actionStart(1,1,true))return;window.__rare={round:0,correct:0};renderRareRound()}
-function renderRareRound(){const g=window.__rare;const symbols=['✦','✦','✦','✦','✦','✦','✦','◆'];symbols.sort(()=>Math.random()-.5);g.odd=symbols.indexOf('◆');openModal(`<div class="minigame"><div class="mini-head"><h2>📚 Rare Shelf</h2><span class="mini-score">Shelf ${g.round+1}/3</span></div><p>One spine has the wrong archive mark. Spot it.</p><div class="spine-grid">${symbols.map((s,i)=>`<button class="spine" onclick="rarePick(${i})">INK & ASHES ${s}</button>`).join('')}</div></div>`)}
-function rarePick(i){const g=window.__rare;if(i===g.odd)g.correct++;toast(i===g.odd?'Found it ✓':'Normal catalog mark.');g.round++;if(g.round<3)return renderRareRound();const score=Math.round(g.correct/3*100);const r=miniReward('rarebook',score,{skill:'lore',skillXp:13,stats:{knowledge:2}});if(score>=67){const books=ITEMS.filter(x=>x.type==='book'&&!owns(x.id));if(books.length)addItem(pick(books).id);else earn(15)}resultModal('rarebook',r,`<p class="muted">${g.correct}/3 odd spines found.${score>=67?' You pulled a collectible from the shelf.':''}</p>`) }
-
-function startNightShopMini(){if(!actionStart(1,1,true))return;const pool=ITEMS.filter(x=>!owns(x.id)&&['Rare','Epic','Legendary'].includes(x.rarity));const it=pick(pool.length?pool:ITEMS);const fair=it.price;const opts=[Math.max(5,Math.round(fair*.55)),Math.round(fair*.92),Math.round(fair*1.45)].sort(()=>Math.random()-.5);window.__appraise={it,fair,opts,best:opts.reduce((bi,v,i,a)=>Math.abs(v-fair)<Math.abs(a[bi]-fair)?i:bi,0)};openModal(`<div class="minigame"><h2>✨ Midnight Appraisal</h2><div class="sort-item">${it.emoji}</div><p style="text-align:center"><b>${it.name}</b><br><span class="muted">${it.tags.join(' • ')} • rarity hidden</span></p><p>What looks closest to a fair normal-shop price?</p><div class="mini-grid">${opts.map((v,i)=>`<button class="mini-card" onclick="appraisePick(${i})"><b>${v} 🪙</b></button>`).join('')}</div></div>`)}
-function appraisePick(i){const g=window.__appraise;const dist=Math.abs(g.opts[i]-g.fair)/Math.max(1,g.fair);const score=clamp(Math.round(100-dist*120),20,100);const r=miniReward('nightshop',score,{skill:'collecting',skillXp:13,stats:{knowledge:1},inspiration:1});rollShop('night');if(score>=75){const price=Math.max(8,Math.round(g.fair*.68));window.__nightOffer={...g.it,nightPrice:price};return resultModal('nightshop',r,`<p>You read the vendor correctly. <b>${g.it.name}</b> appears as a private offer for ${price} coins.</p><button class="btn secondary" onclick="buyNightOffer()">Buy private offer</button>`) }resultModal('nightshop',r,`<p class="muted">The vendor smiles like you just told them exactly how much to charge. Shop stock still rerolled.</p>`) }
-function buyNightOffer(){const f=window.__nightOffer;if(!f)return;if(!spend(f.nightPrice)){toast('Not enough coins.');return}addItem(f.id);S.lifetime.bought++;progressQuest('buy',1);progressQuest('spend',f.nightPrice);closeModal();save();render()}
-
-const JOB_PRIORITIES=['speed','quality','weirdness'];
-function startOddJobMini(){if(!actionStart(1,1,true))return;const p=pick(JOB_PRIORITIES);window.__job={priority:p,round:0,correct:0};renderJobRound()}
-function renderJobRound(){const g=window.__job;const clues={speed:'The client keeps checking the clock and says, “I need this tomorrow.”',quality:'The client says, “I would rather wait than get something average.”',weirdness:'The client says, “If it feels normal, I do not want it.”'};const stages=[['Promise a fast turnaround','Show a meticulous process','Pitch the strangest concept'],['Simplify the scope','Add a quality check','Add an unexpected twist'],['Offer an early delivery','Offer a refinement pass','Offer a mystery bonus']];const opts=stages[g.round];const best={speed:0,quality:1,weirdness:2}[g.priority];openModal(`<div class="minigame"><div class="mini-head"><h2>🎟️ Client Negotiation</h2><span class="mini-score">Stage ${g.round+1}/3</span></div><div class="hintbox">${clues[g.priority]}</div><p>Choose the pitch that fits the client.</p><div class="choices">${opts.map((x,i)=>`<button class="choice" onclick="jobPick(${i},${best})">${x}</button>`).join('')}</div></div>`)}
-function jobPick(i,best){const g=window.__job;if(i===best)g.correct++;toast(i===best?'They like that ✓':'They look unconvinced.');g.round++;if(g.round<3)return renderJobRound();const score=Math.round(g.correct/3*100);const r=miniReward('oddjob',score,{coins:8,skill:'social',skillXp:12,stats:{confidence:1}});const c={id:'odd'+Date.now(),type:pick(['perfume','style','bake']),title:`Night Market ${tc(g.priority)} Job`,difficulty:score>=67?4:3,reward:rand(72,105)+(score>=100?20:0),deadline:S.day+(g.priority==='speed'?1:2),done:false,odd:true};S.commissions.unshift(c);resultModal('oddjob',r,`<p>Commission added: <b>${c.title}</b> • ${c.reward} coins • due Day ${c.deadline}.</p>`) }
-
-const LANTERN_CLUES=[
- {c:'Follow the lantern with the <b>silver star</b>.',opts:['⭐','🌙','🍒'],a:'⭐'},
- {c:'The note says, “Not fruit. Not moon.”',opts:['🍒','🌙','🪞'],a:'🪞'},
- {c:'Choose the symbol that comes after 🌙 → ⭐ → 🌙 → ?',opts:['⭐','🍒','🌙'],a:'⭐'}
-];
-function startMysteryMini(){if(!actionStart(1,1,true))return;window.__maze={qs:[...LANTERN_CLUES].sort(()=>Math.random()-.5),i:0,correct:0};renderMaze()}
-function renderMaze(){const g=window.__maze,q=g.qs[g.i];openModal(`<div class="minigame"><div class="mini-head"><h2>🌘 Lantern Maze</h2><span class="mini-score">Turn ${g.i+1}/${g.qs.length}</span></div><div class="hintbox">${q.c}</div><div class="lanterns">${q.opts.sort(()=>Math.random()-.5).map(x=>`<button class="lantern" onclick="mazePick('${x}')">🏮<br>${x}</button>`).join('')}</div></div>`)}
-function mazePick(x){const g=window.__maze,q=g.qs[g.i];if(x===q.a)g.correct++;toast(x===q.a?'The path opens ✓':'Dead end. Extremely atmospheric.');g.i++;if(g.i<g.qs.length)return renderMaze();const score=Math.round(g.correct/g.qs.length*100);const r=miniReward('mystery',score,{coins:20,skill:'focus',skillXp:11,stats:{curiosity:2},inspiration:2});if(score>=67){const locked=ITEMS.filter(x=>!owns(x.id)&&['Epic','Legendary'].includes(x.rarity));if(locked.length)addItem(pick(locked).id);else unlockRandomNote()}resultModal('mystery',r,`<p class="muted">${g.correct}/${g.qs.length} correct turns.${score>=67?' Something rare was waiting at the end.':''}</p>`) }
-
-/* ----- THRIFT: actual dig + clue-based haggle ----- */
-startThrift=function(){if(!actionStart(1,1,true))return;const racks=[
-{name:'Denim Rack',emoji:'👖',pool:ITEMS.filter(x=>x.type==='wardrobe'&&['bottom','top'].includes(x.slot))},
-{name:'Accessories Bin',emoji:'👜',pool:ITEMS.filter(x=>x.type==='wardrobe'&&['bag','accessory','shoes'].includes(x.slot))},
-{name:'Home Shelf',emoji:'🪞',pool:ITEMS.filter(x=>x.type==='decor'||x.type==='curio')}
-];window.__racks=racks;openModal(`<div class="minigame"><h2>🧥 Thrift Dig</h2><p>Pick a section, then you get <b>4 digs</b>. You can stop when you find something good or push your luck.</p><div class="actions">${racks.map((r,i)=>`<button class="action" onclick="thriftRack(${i})"><span class="emoji">${r.emoji}</span><b>${r.name}</b><small>${r.pool.length} possible finds</small></button>`).join('')}</div></div>`)}
-thriftRack=function(i){const r=window.__racks[i];const junk=['🧦 Mystery Sock','📼 Unlabeled VHS','🥄 One Spoon','🪆 Questionable Figurine','🧵 Tangled Thread','📎 Bag of Paperclips'];let slots=[];for(let n=0;n<9;n++){if(Math.random()<.45){let it=pick(r.pool);const boost=(hasPerk('thrift_eye')?.12:0)+S.skills.collecting.lvl*.02;if(Math.random()<boost){const hi=r.pool.filter(x=>['Rare','Epic','Legendary'].includes(x.rarity));if(hi.length)it=pick(hi)}slots.push({kind:'item',it})}else slots.push({kind:'junk',label:pick(junk)})}window.__thriftGame={rack:r,slots:slots.sort(()=>Math.random()-.5),digs:4,revealed:[],best:null};renderThriftDig()}
-function renderThriftDig(){const g=window.__thriftGame;openModal(`<div class="minigame"><div class="mini-head"><h2>${g.rack.emoji} Dig the ${g.rack.name}</h2><span class="mini-score">${g.digs} digs left</span></div><p class="muted">Reveal piles. Your best real find stays reserved.</p><div class="mini-grid">${g.slots.map((s,i)=>{const rev=g.revealed.includes(i);return `<button class="mini-card ${rev?'revealed':''}" onclick="thriftDig(${i})" ${rev||g.digs<=0?'disabled':''}>${rev?(s.kind==='item'?`${s.it.emoji}<br><b>${s.it.name}</b><br><small>${s.it.rarity}</small>`:`<b>${s.label}</b>`):'❓<br><b>Dig pile</b>'}</button>`}).join('')}</div>${g.best?`<div class="hintbox">Best so far: ${g.best.emoji} <b>${g.best.name}</b> • ${g.best.rarity}</div>`:''}<div class="hero-row"><button class="btn" onclick="finishThriftDig()" ${!g.best?'disabled':''}>Stop & inspect best find</button></div></div>`)}
-function thriftDig(i){const g=window.__thriftGame;if(g.digs<=0||g.revealed.includes(i))return;g.revealed.push(i);g.digs--;const s=g.slots[i];if(s.kind==='item'){const rank={Common:1,Uncommon:2,Rare:3,Epic:4,Legendary:5};if(!g.best||rank[s.it.rarity]>rank[g.best.rarity])g.best=s.it;toast(`${s.it.rarity} find!`)}else toast('Junk. Character building.');if(g.digs===0&&g.best)return finishThriftDig();renderThriftDig()}
-function finishThriftDig(){const g=window.__thriftGame;if(!g.best){const r=miniReward('thrift',25,{skill:'collecting',skillXp:5});return resultModal('thrift',r,'<p class="muted">Four digs. Nothing. The thrift gods are fickle.</p>')}const f={...g.best,thriftPrice:Math.max(5,Math.floor(g.best.price*.62))};window.__thriftFind=f;const rank={Common:35,Uncommon:50,Rare:70,Epic:88,Legendary:100};recordMini('thrift',rank[f.rarity]||50);openModal(`<div class="minigame"><h2>${f.emoji} ${f.name}</h2><p>${f.rarity} • ${f.tags.join(' • ')}</p><p class="muted">Tag says <b>${f.thriftPrice} coins</b>.</p><div class="hero-row"><button class="btn" onclick="buyThrift()">Buy ${f.thriftPrice} 🪙</button><button class="btn secondary" onclick="haggle()">Haggle</button><button class="btn ghost" onclick="closeModal()">Walk away</button></div></div>`)}
-haggle=function(){const f=window.__thriftFind;const clue=pick([
- {t:'Jules turns the item over and notices visible wear.',a:0},{t:'Jules mentions you have been buying from the shop a lot lately.',a:1},{t:'Jules says they really need shelf space today.',a:2}
-]);window.__hag={clue};openModal(`<div class="minigame"><h2>💬 Haggle Read</h2><div class="hintbox">${clue.t}</div><p>Pick the strongest argument.</p><div class="choices"><button class="choice" onclick="hagglePick(0)">Point out the condition</button><button class="choice" onclick="hagglePick(1)">Ask for a regular-customer break</button><button class="choice" onclick="hagglePick(2)">Offer to take it right now</button></div></div>`)}
-function hagglePick(i){const f=window.__thriftFind,g=window.__hag;const skillSave=Math.random()<Math.min(.25,S.skills.collecting.lvl*.025);if(i===g.clue.a||skillSave){f.thriftPrice=Math.max(4,Math.floor(f.thriftPrice*.74));toast('Price dropped ✓');openModal(`<h2>😌 Successful little menace</h2><p>Jules: “Fine. ${f.thriftPrice}.”</p><button class="btn" onclick="buyThrift()">Take the win — ${f.thriftPrice} 🪙</button>`)}else{f.thriftPrice=Math.ceil(f.thriftPrice*1.05);openModal(`<h2>💀 Wrong angle</h2><p>Jules: “That argument somehow made it ${f.thriftPrice}.”</p><button class="btn secondary" onclick="buyThrift()">…fine</button><button class="btn ghost" onclick="closeModal()">Leave</button>`)} }
-const __buyThriftBase=buyThrift;
-buyThrift=function(){const before=S.inventory.length;__buyThriftBase();if(S.inventory.length>before){gainSkill('collecting',5);S.flow=clamp(S.flow+2,0,100);save()}};
-
-/* ----- PERFUME: selected notes now lead to tuning ----- */
-blendPerfume=function(){if(S.selectedNotes.length!==3){toast('Pick exactly 3 notes.');return}const free=eventToday()?.name==='Perfume Workshop';if(!free&&S.inspiration<1){toast('Need 1 inspiration.');return}if(!actionStart(1,1,false,true))return;if(!free)S.inspiration--;const sel=[...S.selectedNotes];const rec=PERFUME_RECIPES.find(r=>r.notes.every(n=>sel.includes(n)));window.__blend={sel,rec,levels:[3,3,3]};renderBlendTuning()}
-function renderBlendTuning(){const g=window.__blend;openModal(`<div class="minigame"><h2>🧴 Accord Tuning</h2><p class="muted">Balance evaporation and weight. A classic simplified target is stronger heart, moderate top, softer base. Your selected notes keep their own roles.</p><div class="note-mixer">${g.sel.map((n,i)=>`<div class="note-row"><div><b>${NOTES[n].emoji} ${n}</b><br><span class="tiny muted">${NOTES[n].role} • ${NOTES[n].family}</span></div><button class="btn secondary" onclick="blendAdjust(${i},-1)">−</button><div class="note-level">${g.levels[i]}</div><button class="btn secondary" onclick="blendAdjust(${i},1)">+</button></div>`).join('')}</div><div class="hero-row"><button class="btn" onclick="bottleTunedPerfume()">Bottle the accord</button></div></div>`)}
-function blendAdjust(i,d){const g=window.__blend;g.levels[i]=clamp(g.levels[i]+d,1,5);renderBlendTuning()}
-function bottleTunedPerfume(){const g=window.__blend,sel=g.sel,rec=g.rec;const target={top:3,heart:4,base:2};let dist=0;sel.forEach((n,i)=>dist+=Math.abs(g.levels[i]-target[NOTES[n].role]));const tuneScore=clamp(100-dist*12,28,100);const roles=sel.map(n=>NOTES[n].role);const fams=sel.map(n=>NOTES[n].family);let q=42+S.skills.perfumery.lvl*4+Math.round(tuneScore*.34)+(new Set(roles).size===3?10:0)+(hasPerk('trained_nose')?7:0);if(hasPerk('gourmand_bias')&&fams.filter(x=>x==='gourmand').length>=2)q+=10;if(rec)q+=9;q=clamp(q+rand(-4,5),35,100);const name=rec?.name||generatePerfumeName(sel);const p={id:Date.now(),name,notes:sel,quality:q,rarity:rec?.rarity||(q>90?'Epic':q>74?'Rare':'Uncommon'),desc:rec?.desc||`${fams.join(' • ')} experiment`,emoji:'🧴'};S.perfumes.push(p);S.lifetime.blends++;if(rec&&!S.recipes.includes(rec.name)){S.recipes.push(rec.name);gainXP(18);toast(`✨ Formula discovered: ${rec.name}`)}gainSkill('perfumery',Math.round(12+tuneScore/10));gainStat('creativity',1);recordMini('perfume',tuneScore);S.selectedNotes=[];checkCommissions('perfume',p);checkAchievements();save();render();openModal(`<div class="minigame"><div class="mini-head"><div><h2>🧴 ${p.name}</h2><div class="muted small">${p.rarity} • ${p.notes.join(' + ')}</div></div><div class="grade">${gradeFor(tuneScore)}</div></div><p><b>Accord tuning ${tuneScore}/100</b> • Bottle quality <b>${p.quality}/100</b></p><p>${p.desc}</p><button class="btn" onclick="closeModal()">Shelf it</button></div>`) }
-
-/* ----- Scent Match mastery ----- */
-startScentPuzzle=function(){const pool=S.notes;if(!pool.length)return;const target=pick(pool);window.__scent={target,hints:1,wrong:0};const hints=[`Family: ${NOTES[target].family}`,`Role: ${NOTES[target].role}`,`Emoji clue: ${NOTES[target].emoji}`];openModal(`<h2>🔎 Scent Match</h2><p>Guess the hidden note.</p><p class="muted">Hint: ${hints[0]}</p><div class="chips">${pool.map(n=>`<button class="chip" onclick="guessScent('${n}')">${n}</button>`).join('')}</div>`)}
-guessScent=function(n){const g=window.__scent;if(n===g.target){const score=clamp(100-g.wrong*25,25,100);const r=miniReward('scent',score,{coins:14,skill:'perfumery',skillXp:8,inspiration:1});return resultModal('scent',r,`<p>Correct: <b>${n}</b>. ${g.wrong?'You needed '+g.wrong+' extra guess'+(g.wrong===1?'':'es')+'.':'First-try nose behavior.'}</p>`)}g.wrong++;g.hints++;const h=[`Family: ${NOTES[g.target].family}`,`Role: ${NOTES[g.target].role}`,`Emoji clue: ${NOTES[g.target].emoji}`];if(g.hints>3){const r=miniReward('scent',25,{skill:'perfumery',skillXp:4});return resultModal('scent',r,`<p>It was <b>${g.target}</b> ${NOTES[g.target].emoji}.</p>`)}toast('Nope. Another hint unlocked.');openModal(`<h2>🔎 Scent Match</h2><p class="muted">${h.slice(0,g.hints).join('<br>')}</p><div class="chips">${S.notes.map(x=>`<button class="chip" onclick="guessScent('${x}')">${x}</button>`).join('')}</div>`) };
-
-/* ----- PIANO: failures and successes both become mastery scores ----- */
-pianoKey=function(n){const g=window.__piano;g.input.push(n);const idx=g.input.length-1;if(g.seq[idx]!==n){const score=clamp(Math.round(idx/g.seq.length*100),20,90);const key=g.hard?'pianoHard':'piano';const r=miniReward(key,score,{skill:'music',skillXp:g.hard?10:7,stats:{discipline:1}});return resultModal(key,r,`<p class="muted">You made it ${idx} note${idx===1?'':'s'} in. Pattern: <b>${g.seq.join(' ')}</b>.</p>`)}const p=document.getElementById('pianoProgress');if(p)p.textContent=`${g.input.length} / ${g.seq.length}`;if(g.input.length===g.seq.length){const reward=(g.hard?22:12)+(eventToday()?.name==='Moonlit Arcade Tournament'?15:0);const key=g.hard?'pianoHard':'piano';const r=miniReward(key,100,{coins:reward,skill:'music',skillXp:g.hard?22:15,stats:{discipline:1},inspiration:g.hard?2:1});return resultModal(key,r,'<p class="muted">Perfect pattern. No notes dropped.</p>')}};
-
-/* ----- BAKING: sequencing + doneness decision ----- */
-const BAKE_DONENESS={
- 'Carrot Loaf':{target:'Clean toothpick / moist crumbs',opts:['Wet batter','Clean toothpick / moist crumbs','Dry and dark edges']},
- 'Brownie Bites':{target:'Fudgy crumbs',opts:['Liquid center','Fudgy crumbs','Bone-dry toothpick']},
- 'Vanilla Cupcakes':{target:'Spring-back top',opts:['Sunken wet center','Spring-back top','Hard browned cap']},
- 'Chocolate Loaf':{target:'A few moist crumbs',opts:['Raw streaks','A few moist crumbs','Completely dry and shrinking']}
-};
-finishBake=function(){const g=window.__bake;window.__bakeBaseMistakes=g.mistakes;const d=BAKE_DONENESS[g.recipe.name];openModal(`<div class="minigame"><h2>${g.recipe.emoji} Final Bake Check</h2><p>You got the sequence. Now decide when to pull <b>${g.recipe.name}</b>.</p><div class="choices">${d.opts.sort(()=>Math.random()-.5).map(x=>`<button class="choice" onclick="bakeDoneness('${x.replaceAll("'","\\'")}')">${x}</button>`).join('')}</div><p class="muted small">Sequence mistakes: ${g.mistakes}</p></div>`)}
-function bakeDoneness(x){const g=window.__bake,d=BAKE_DONENESS[g.recipe.name];const done=x===d.target;let q=clamp(95+S.skills.baking.lvl*2-g.mistakes*14+(done?3:-18)+rand(-4,5),30,100);let pay=Math.round(g.recipe.pay*(.62+q/100));if(q>=90&&hasPerk('perfect_batch'))pay=Math.round(pay*1.25);const r=miniReward('bake',q,{coins:pay,skill:'baking',skillXp:18,stats:{creativity:2}});S.lifetime.bakes++;S.lifetime.lastBakeQuality=Math.max(S.lifetime.lastBakeQuality||0,q);checkCommissions('bake',{name:g.recipe.name,quality:q});resultModal('bake',r,`<p><b>${g.recipe.name}</b> quality ${q}/100.</p><p class="muted">${done?'You read the doneness cue correctly.':'You pulled it at the wrong cue, which cost quality.'} Sold extras for ${r.paid} coins.</p>`) }
-
-/* ----- STYLE: outfit stats + finishing decision ----- */
-judgeOutfit=function(){if(S.styleSubmittedDay===S.day){toast('You already submitted today’s look.');return}const ids=Object.values(S.outfit).filter(Boolean);if(ids.length<3){toast('Equip at least 3 pieces.');return}const theme=STYLE_THEMES[S.styleTheme],pieces=ids.map(item);const scored=pieces.map(it=>({it,match:theme.tags.filter(t=>it.tags.includes(t)).length}));const max=Math.max(...scored.map(x=>x.match));const best=scored.filter(x=>x.match===max).map(x=>x.it.id);window.__styleFinish={ids,theme,best};openModal(`<div class="minigame"><h2>🪩 Style Finish</h2><div class="hintbox"><b>${theme.name}</b><br>${theme.desc}</div><p>Which equipped piece should be the focal point for this brief?</p><div class="mini-grid">${pieces.map(it=>`<button class="mini-card" onclick="styleFocal('${it.id}')"><span style="font-size:26px">${it.emoji}</span><br><b>${it.name}</b><br><small>${it.tags.join(' • ')}</small></button>`).join('')}</div></div>`)}
-function styleFocal(id){const g=window.__styleFinish;g.focalCorrect=g.best.includes(id);const moves=[{n:'Keep one statement piece and edit around it',good:true},{n:'Add every accessory you own',good:false},{n:'Ignore the brief and hope confidence carries it',good:false}].sort(()=>Math.random()-.5);openModal(`<div class="minigame"><h2>🧷 Final Styling Call</h2><p>${g.focalCorrect?'Good focal choice.':'Interesting focal choice.'} What is the cleanest finishing move?</p><div class="choices">${moves.map((m,i)=>`<button class="choice" onclick="styleMove(${m.good})">${m.n}</button>`).join('')}</div></div>`)}
-function styleMove(good){const g=window.__styleFinish,ids=g.ids,theme=g.theme;let base=35+ids.length*5+(hasPerk('style_instinct')?8:0)+S.skills.styling.lvl*3;const tags=ids.flatMap(id=>item(id).tags);theme.tags.forEach(t=>{const c=tags.filter(x=>x===t).length;base+=c*(hasPerk('accessorize')&&item(S.outfit.accessory)?.tags.includes(t)?10:7)});if(new Set(tags).size>=6)base+=5;const mini=(g.focalCorrect?50:22)+(good?50:20);const miniScore=clamp(mini,0,100);let score=clamp(base+Math.round((miniScore-50)*.18)+rand(-3,4),30,100);S.styleSubmittedDay=S.day;S.lastStyleScore=score;S.lifetime.styles++;const reward=Math.round(score/3)*(eventToday()?.name==='Velvet Fashion Challenge'?2:1);const r=miniReward('style',miniScore,{coins:reward,skill:'styling',skillXp:18,stats:{confidence:score>=75?2:1}});progressQuest('studio',1);checkCommissions('style',{name:theme.name,quality:score,tags});resultModal('style',r,`<p><b>Look score ${score}/100</b> • Styling decision ${miniScore}/100.</p><p class="muted">Matched brief tags: ${theme.tags.filter(t=>tags.includes(t)).join(', ')||'none'}.</p>`) }
-
-/* ----- PETS: three-cup attention game ----- */
-petAction=function(pet){if(!actionStart(1,1))return;const k=pet==='oakley'?'oakley':'cat';window.__petGame={k,round:0,wins:0,spot:rand(0,2),show:true};renderPetCups(true)}
-function renderPetCups(show){const g=window.__petGame;const label=g.k==='oakley'?'treat':'toy mouse';openModal(`<div class="minigame"><div class="mini-head"><h2>${g.k==='oakley'?'🐕 Oakley Treat Hunt':'🐈 Cat Jurisdiction'}</h2><span class="mini-score">Round ${g.round+1}/3</span></div><p>Remember where the ${label} is.</p><div class="cup-row">${[0,1,2].map(i=>`<button class="cup ${show&&i===g.spot?'show':''}" ${show?'disabled':''} onclick="petCupPick(${i})">${show&&i===g.spot?(g.k==='oakley'?'🦴':'🐭'):'🥤'}</button>`).join('')}</div>${show?'<button class="btn" onclick="hidePetCups()">Shuffle cups</button>':''}</div>`)}
-function hidePetCups(){renderPetCups(false)}
-function petCupPick(i){const g=window.__petGame;if(i===g.spot)g.wins++;toast(i===g.spot?'Found it ✓':'Wrong cup. Betrayal.');g.round++;if(g.round<3){g.spot=rand(0,2);return renderPetCups(true)}const score=Math.round(g.wins/3*100),key=g.k;const r=miniReward(key,score,{skill:'focus',skillXp:6,stats:{confidence:1},coins:g.k==='oakley'?5:3});const gain=2+g.wins*2;S.pets[g.k]=clamp(S.pets[g.k]+gain,0,100);resultModal(key,r,`<p class="muted">Affection +${gain}. ${g.wins}/3 finds.</p>`) }
-
-/* ----- Flow is tonight's momentum; mastery is permanent ----- */
-const __sleepArcadeBase=sleep;
-sleep=function(){if(!S.started)return;S.flow=0;S.combo=0;__sleepArcadeBase()};
-
-/* ----- Final render text tweaks ----- */
-const __renderHomeBase=renderHome;
-renderHome=function(){__renderHomeBase();const l=document.getElementById('levelInfo');if(l)l.innerHTML+=`<br>🔥 Flow <b>${S.flow}%</b> • ${S.combo?`current hot streak x${S.combo}`:'build Flow by scoring well in minigames'} • ${S.lifetime.minigames||0} minigames played.`};
-const __renderStudioBase=renderStudio;
-renderStudio=function(){__renderStudioBase();if(S.studioTab==='perfume'){const c=document.getElementById('studioContent');const p=c?.querySelector('p.small.muted');if(p)p.textContent='Choose 3 notes, then tune the accord strength before bottling. Top + heart + base gives the strongest structural bonus.'}};
-
-ensureArcadeState();
-
-
-document.getElementById('startBtn').addEventListener('click',()=>startGame());document.getElementById('nextBlockBtn').addEventListener('click',()=>advanceTime());document.getElementById('sleepBtn').addEventListener('click',()=>sleep());document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
-if(S.started&&!S.quests.daily.length)generateQuests();if(S.started&&!S.shop.length)rollShop();if(S.started&&!S.commissions.length)generateCommissions();render();switchView(S.lastView||'home');
-
-/* =========================================================
-   DIRECTOR'S CUT — scene-driven shell, overworld, unified nav
-   ========================================================= */
-const DIRECTOR_NAV=[
-  ['home','🏠','Home'],['city','🌃','City'],['studio','🧪','Studio'],['style','🪩','Style'],['apartment','🛋️','Apartment'],['people','💌','People'],['progress','🏆','Progress'],['calendar','🗓️','Calendar'],['settings','⚙️','Settings']
-];
-const SCENE_META={
-  home:{k:'YOUR APARTMENT',title:'Your night is yours.',icon:'🛋️',prop:'☕',sign:'after hours'},
-  city:{k:'VELVET CITY',title:'Pick a district. Make questionable plans.',icon:'🌃',prop:'🛍️',sign:'velvet city'},
-  studio:{k:'CREATIVE STUDIO',title:'Make something weirdly specific.',icon:'🧪',prop:'🎹',sign:'make it'},
-  style:{k:'WARDROBE FLOOR',title:'Build the look, then defend it.',icon:'🪩',prop:'👢',sign:'main character'},
-  apartment:{k:'HOME BASE',title:'Upgrade the room. Stack the bonuses.',icon:'🛋️',prop:'🪴',sign:'home'},
-  people:{k:'SOCIAL MAP',title:'Everybody has lore.',icon:'💌',prop:'📕',sign:'say less'},
-  progress:{k:'PLAYER PROFILE',title:'The numbers are getting concerning.',icon:'🏆',prop:'💿',sign:'level up'},
-  calendar:{k:'CITY CALENDAR',title:'Something is always happening after dark.',icon:'🗓️',prop:'🎟️',sign:'tonight'},
-  settings:{k:'BACKSTAGE',title:'Save files, switches, suspicious buttons.',icon:'💾',prop:'⚙️',sign:'backstage'}
-};
-function isMobileNav(){return window.innerWidth<=760}
-renderTabs=function(){const el=document.getElementById('tabs');if(el)el.innerHTML=''};
-renderNav=function(){const nav=document.getElementById('nav');if(!nav)return;const set=isMobileNav()?DIRECTOR_NAV.slice(0,5):DIRECTOR_NAV;nav.innerHTML=set.map(([id,e,l])=>`<button class="${S.lastView===id?'active':''}" onclick="switchView('${id}')"><span>${e}</span>${l}</button>`).join('')+(isMobileNav()?`<button class="more-nav ${['apartment','people','progress','calendar','settings'].includes(S.lastView)?'active':''}" onclick="openNavDrawer()"><span>✦</span>More</button>`:'')};
-function openNavDrawer(){openModal(`<div class="minigame"><div class="mini-head"><div><h2 style="margin:0">✦ Velvet Hour</h2><div class="muted small">Where to?</div></div></div><div class="mini-grid">${DIRECTOR_NAV.map(([id,e,l])=>`<button class="mini-card ${S.lastView===id?'good':''}" onclick="closeModal();switchView('${id}')"><span style="font-size:27px">${e}</span><br><b>${l}</b></button>`).join('')}</div></div>`)}
-function timeLabel(){return S.period<4?PERIODS[S.period]:'Past midnight'}
-function sceneDistrictMeta(){const d=DISTRICTS.find(x=>x.id===S.district)||DISTRICTS[0];return {k:d.name.toUpperCase(),title:d.name==='Old Market'?'Dig through racks, bargain badly, find treasure.':d.desc,icon:d.emoji,prop:d.id==='market'?'🧥':d.id==='arcade'?'🕹️':d.id==='glasshouse'?'🌼':d.id==='archive'?'📚':'✨',sign:d.name.toLowerCase()}}
-function sceneArtMarkup(meta){return `<div class="moon"></div><div class="skyline"></div><div class="window-glow"></div><div class="scene-icon">${meta.icon}</div><div class="scene-prop">${meta.prop}</div><div class="neon-sign">${meta.sign}</div>`}
-function renderSceneFrame(){
-  const view=S.lastView||'home',base=view==='city'?sceneDistrictMeta():SCENE_META[view]||SCENE_META.home;
-  document.body.dataset.scene=view+(view==='city'?`-${S.district}`:'');
-  const kicker=document.getElementById('sceneKicker'),art=document.getElementById('sceneArt'),status=document.getElementById('sceneStatus');
-  if(kicker)kicker.textContent=base.k;if(art)art.innerHTML=sceneArtMarkup(base);
-  const greeting=document.getElementById('greeting'),hero=document.getElementById('heroText');
-  if(greeting)greeting.textContent=S.started?(view==='home'?`${weekday()} night • ${timeLabel()}`:base.title):'Velvet City is waiting, Mak.';
-  if(hero)hero.textContent=S.started?(view==='home'?`Choose how to spend tonight. Your build is Level ${S.level}, your Vibe is ${calcVibe()}, and perfection is not a quest requirement.`:(view==='city'?base.title:`${base.k} • ${eventToday()?eventToday().emoji+' '+eventToday().name:'ordinary city night'}`)):'Enter the city to start your first night run.';
-  if(status)status.innerHTML=S.started?`<span class="status-chip">🌙 Day ${S.day}</span><span class="status-chip">⏳ ${timeLabel()}</span><span class="status-chip">⚡ ${S.energy}/${S.maxEnergy+(decorBonuses().energy||0)}</span><span class="status-chip">🔥 Flow ${S.flow||0}%</span>${eventToday()?`<span class="status-chip">${eventToday().emoji} ${eventToday().name}</span>`:''}`:'';
-  const lvl=document.getElementById('hudLevel'),rail=document.getElementById('railLevel'),xp=document.getElementById('hudXpBar'),xpt=document.getElementById('hudXpText'),hw=document.getElementById('hudWeekday'),hp=document.getElementById('hudPeriod'),hv=document.getElementById('hudVibe');
-  if(lvl)lvl.textContent=`Lv.${S.level}`;if(rail)rail.textContent=`Level ${S.level} • Vibe ${calcVibe()}`;if(xp)xp.style.width=`${Math.min(100,S.xp/(S.level*55)*100)}%`;if(xpt)xpt.textContent=`${S.xp} / ${S.level*55} XP`;if(hw)hw.textContent=`${weekday().toUpperCase()} • DAY ${S.day}`;if(hp)hp.textContent=timeLabel().toUpperCase();if(hv)hv.textContent=calcVibe();
-  const pips=[...document.querySelectorAll('#timePips i')];pips.forEach((p,i)=>{p.className=i<S.period?'done':i===S.period&&S.period<4?'now':''});
-  document.getElementById('startBtn').style.display=S.started?'none':'inline-block';
-}
-const __switchViewDirectorBase=switchView;
-switchView=function(id){__switchViewDirectorBase(id);renderSceneFrame();document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===id));renderNav();window.scrollTo({top:0,behavior:'smooth'})};
-const __selectDistrictDirectorBase=selectDistrict;
-selectDistrict=function(id){__selectDistrictDirectorBase(id);renderSceneFrame();enhanceDirectorSurfaces()};
-const __renderDirectorBase=render;
-render=function(){__renderDirectorBase();renderSceneFrame();enhanceDirectorSurfaces()};
-
-const __renderCityDirectorBase=renderCity;
-renderCity=function(){
-  const d=DISTRICTS.find(x=>x.id===S.district)||DISTRICTS[0];
-  const posLabel=x=>x.id==='arcade'?'Level 3':x.id==='glasshouse'?'85 Vibe':x.id==='archive'?'Knowledge + story':'170 Vibe';
-  document.getElementById('districts').innerHTML=`<div class="city-map"><div class="map-road" style="width:41%;left:18%;top:60%;transform:rotate(-18deg)"></div><div class="map-road" style="width:44%;left:47%;top:52%;transform:rotate(15deg)"></div><div class="map-road" style="width:36%;left:25%;top:30%;transform:rotate(35deg)"></div><div class="map-road" style="width:36%;left:56%;top:28%;transform:rotate(-25deg)"></div>${DISTRICTS.map(x=>{const u=x.unlock(S);return `<button class="map-node ${x.id} ${S.district===x.id?'active':''} ${u?'':'locked'}" onclick="selectDistrict('${x.id}')"><div class="node-icon">${x.emoji}</div><b>${x.name}</b><small>${u?'OPEN':'🔒 '+posLabel(x)}</small></button>`}).join('')}</div>`;
-  document.getElementById('districtTitle').innerHTML=`<span class="district-emblem">${d.emoji}</span><h3>${d.name}</h3>`;
-  document.getElementById('districtDesc').textContent=d.desc;
-  const cityActions=document.getElementById('cityActions');cityActions.innerHTML=(DISTRICT_ACTIONS[d.id]||[]).map(a=>`<button class="action" onclick="doCity('${a.id}')"><span class="emoji">${a.emoji}</span><b>${a.name}</b><small>${a.desc}<br>⚡${energyCost(a.cost)} • ⏳${a.time}</small></button>`).join('');
-  const title=document.getElementById('districtTitle');if(title?.parentElement&&!title.parentElement.classList.contains('district-stage')){const parent=title.parentElement;parent.classList.add('district-stage')}
-  if(!S.shop.length)rollShop(d.id==='night'?'night':'normal');
-  document.getElementById('shop').innerHTML=S.shop.map((x,i)=>{const p=Math.ceil(x.price*(1-shopDiscount(x)/100));return `<div class="shopitem rarity-${x.rarity} ${x.sold?'sold':''}"><div class="item-emoji">${x.emoji}</div><b>${x.name}</b><div class="tiny muted">${tc(x.type)} • ${x.rarity}</div><div class="tiny muted">${x.tags.join(' • ')}</div><div class="price">${p} 🪙 ${p<x.price?`<span class="tiny muted"><s>${x.price}</s></span>`:''}</div><button class="btn secondary" ${x.sold?'disabled':''} onclick="buyShop(${i})">${x.sold?'Sold':'Buy'}</button></div>`}).join('')
-};
-function enhanceDirectorSurfaces(){
-  document.querySelectorAll('.quest').forEach(q=>{if(q.querySelector('.questbar'))return;const tag=q.querySelector('.tag');if(!tag)return;const m=(tag.textContent||'').match(/(\d+)\/(\d+)/);if(!m)return;const pct=Math.min(100,+m[1]/Math.max(1,+m[2])*100);q.insertAdjacentHTML('beforeend',`<div class="questbar"><i style="width:${pct}%"></i></div>`) });
-  document.querySelectorAll('.view .card').forEach((c,i)=>{c.style.setProperty('--card-index',i)});
-}
-const __openModalDirectorBase=openModal;
-openModal=function(html){__openModalDirectorBase(html);const box=document.querySelector('.modalbox');if(!box)return;const t=(box.textContent||'').toLowerCase();let mini='social';if(/ingredient|skincare/.test(t))mini='skincare';else if(/archive|cipher|rare shelf|book/.test(t))mini='archive';else if(/perfume|accord|scent|note pyramid/.test(t))mini='perfume';else if(/bake|cupcake|brownie|loaf/.test(t))mini='bake';else if(/arcade|neon|rhythm|combo|piano/.test(t))mini='arcade';else if(/thrift|clearance|appraisal|vendor|haggle/.test(t))mini='shop';else if(/oakley|cat jurisdiction|treat hunt/.test(t))mini='pets';box.dataset.mini=mini};
-window.addEventListener('resize',()=>{renderNav();renderSceneFrame()});
-render();switchView(S.lastView||'home');
-
-/* =========================================================
-   DIRECTOR'S CUT — night builds + recap + unique view stages
-   ========================================================= */
-const NIGHT_INTENTS={
-  treasure:{emoji:'🛍️',name:'Treasure Goblin',desc:'Shops are 12% cheaper tonight. Financial responsibility, but make it opportunistic.'},
-  creative:{emoji:'✨',name:'Creative Spiral',desc:'Creative and knowledge skills gain 20% more skill XP tonight.'},
-  social:{emoji:'💋',name:'Main Character',desc:'Every friendship gain gets +1 tonight.'},
-  locked:{emoji:'🎯',name:'Locked In',desc:'Start at 15 Flow and get a tiny performance bump on minigames.'},
-  cozy:{emoji:'🛋️',name:'Cozy Reset',desc:'Gain 2 bonus energy for this night only.'}
-};
-function ensureDirectorState(){
-  if(!('nightIntent' in S))S.nightIntent=null;
-  if(!S.nightRun)S.nightRun={day:S.day,startCoins:S.coins,startActions:S.lifetime.actions||0,startMini:S.lifetime.minigames||0};
-  if(typeof S.nightBonusEnergy!=='number')S.nightBonusEnergy=0;
-}
-ensureDirectorState();
-function resetNightRun(){S.nightRun={day:S.day,startCoins:S.coins,startActions:S.lifetime.actions||0,startMini:S.lifetime.minigames||0};save()}
-function promptNightIntent(){
-  if(!S.started||S.nightIntent)return;
-  openModal(`<div class="minigame"><div class="mini-head"><div><div class="eyebrow">NIGHT BUILD</div><h2 style="margin:3px 0">Choose tonight's intention</h2></div><span class="mini-score">Day ${S.day}</span></div><p class="muted">One temporary bonus. It disappears tomorrow, so pick whatever sounds fun rather than trying to optimize your entire fake life.</p><div class="intent-grid">${Object.entries(NIGHT_INTENTS).map(([id,x])=>`<button class="intent-card" onclick="chooseNightIntent('${id}')"><span class="intent-icon">${x.emoji}</span><b>${x.name}</b><small>${x.desc}</small></button>`).join('')}</div></div>`)
-}
-function chooseNightIntent(id){
-  const x=NIGHT_INTENTS[id];if(!x)return;S.nightIntent=id;S.nightBonusEnergy=0;
-  if(id==='locked')S.flow=Math.max(S.flow||0,15);
-  if(id==='cozy'){S.nightBonusEnergy=2;S.energy+=2}
-  addFeed(`${x.emoji} Night intention: ${x.name}.`);closeModal();save();render();toast(`${x.emoji} ${x.name}`)
-}
-const __startGameIntentBase=startGame;
-startGame=function(){const was=S.started;__startGameIntentBase();ensureDirectorState();if(!was){resetNightRun();setTimeout(promptNightIntent,80)}};
-const __shopDiscountIntentBase=shopDiscount;
-shopDiscount=function(it){return __shopDiscountIntentBase(it)+(S.nightIntent==='treasure'?12:0)};
-const __gainSkillIntentBase=gainSkill;
-gainSkill=function(k,n){if(S.nightIntent==='creative'&&['perfumery','styling','baking','music','lore'].includes(k))n=Math.round(n*1.2);return __gainSkillIntentBase(k,n)};
-const __friendIntentBase=friend;
-friend=function(id,n){return __friendIntentBase(id,n+(S.nightIntent==='social'&&n>0?1:0))};
-const __miniRewardIntentBase=miniReward;
-miniReward=function(key,score,opts={}){if(S.nightIntent==='locked')score=Math.min(100,score+4);return __miniRewardIntentBase(key,score,opts)};
-const __sleepRecapBase=sleep;
-sleep=function(){
-  if(!S.started)return;ensureDirectorState();
-  const run=S.nightRun||{startCoins:S.coins,startActions:S.lifetime.actions||0,startMini:S.lifetime.minigames||0};
-  const actions=Math.max(0,(S.lifetime.actions||0)-run.startActions),minis=Math.max(0,(S.lifetime.minigames||0)-run.startMini),net=S.coins-run.startCoins,quests=S.quests.daily.filter(q=>q.claimed).length,flow=S.flow||0;
-  const score=Math.min(100,Math.round(flow*.48+quests*12+Math.min(30,minis*6)+Math.min(18,actions*3)));const rank=score>=90?'S':score>=78?'A':score>=64?'B':score>=48?'C':'D';
-  const intent=S.nightIntent?NIGHT_INTENTS[S.nightIntent]:null;
-  openModal(`<div class="night-recap"><div class="eyebrow">NIGHT COMPLETE</div><h2>${weekday()} • Day ${S.day}</h2><div class="night-rank">${rank}</div><div class="muted small">Night score ${score}/100${intent?` • ${intent.emoji} ${intent.name}`:''}</div><div class="recap-stats"><div class="recap-stat"><b>${actions}</b><small>ACTIONS</small></div><div class="recap-stat"><b>${minis}</b><small>MINIGAMES</small></div><div class="recap-stat"><b>${flow}%</b><small>PEAK FLOW</small></div><div class="recap-stat"><b>${net>=0?'+':''}${net}</b><small>NET COINS</small></div></div><p class="muted small">This rank is just a recap, not a punishment. A chaotic D-rank shopping night is still canon.</p><button class="btn gold" onclick="advanceNightDirector()">🌘 Start Day ${S.day+1}</button><button class="btn secondary" onclick="closeModal()">Not yet</button></div>`)
-};
-function advanceNightDirector(){
-  closeModal();S.nightIntent=null;S.nightBonusEnergy=0;__sleepRecapBase();ensureDirectorState();resetNightRun();save();render();setTimeout(promptNightIntent,120)
-}
-function directorStage(view,title,desc,hero,prop,cls){return `<div class="view-stage ${cls||''}" data-director-stage="${view}"><div class="eyebrow">${view.toUpperCase()}</div><h2>${title}</h2><p>${desc}</p><div class="stage-visual"><span class="hero-emoji">${hero}</span><span class="prop-emoji">${prop}</span></div></div>`}
-function updateUniqueStages(){
-  const configs={
-    studio:['Your little creative laboratory',S.studioTab==='perfume'?'Build accords, tune formulas, and accidentally create something expensive.':S.studioTab==='baking'?'Timing, order, and doneness all matter here.':S.studioTab==='piano'?'Patterns first. Musical dignity later.':'Train your nose one clue at a time.','🧪','🎹','studio-stage'],
-    style:['Dressing room',`Today's brief: ${STYLE_THEMES[S.styleTheme]?.name||'After Dark'}. Equipped pieces: ${Object.values(S.outfit).filter(Boolean).length}/5.`,'🪩','👢','style-stage'],
-    apartment:[`Apartment Lv.${S.homeLevel}`,`Your equipped decor changes the actual game economy. Oakley approves of any upgrade that creates more floor to occupy.`,'🛋️','🐕','apartment-stage'],
-    people:['People of Velvet City',`Highest friendship: ${Math.max(...Object.values(S.friendship))}. Every NPC has their own preferences, systems, and increasingly unnecessary lore.`,'💌','📕','people-stage'],
-    progress:[`Level ${S.level} • Vibe ${calcVibe()}`,`${S.achievements.length}/${ACHIEVEMENTS.length} achievements • ${Object.keys(S.mastery||{}).length} activities with recorded mastery.`,'🏆','💿','progress-stage'],
-    calendar:[`Season ${S.flags.season} • Day ${seasonDay()}`,eventToday()?`${eventToday().emoji} Tonight: ${eventToday().name} — ${eventToday().desc}`:'No special event tonight. Suspiciously peaceful.','🗓️','🎟️','calendar-stage']
+function freshState(){
+  return {
+    version:1, started:false, prologue:0, day:1, actions:3, coins:60, reputation:0, chapter:0,
+    progress:{frontReset:0,sourced:0,styled:0,labReset:0,scentPractice:0,scentCommission:0,kitchenReset:0,baked:0,budget:0,archiveReset:0,ciphers:0,fragments:0,finalStyle:0,finalScent:0,finalBake:0,finalLore:0},
+    bossDone:[false,false,false,false,false],
+    relations:{jules:0,mina:0,bea:0,rowan:0},
+    skills:{styling:{level:1,xp:0},scent:{level:1,xp:0},baking:{level:1,xp:0},lore:{level:1,xp:0},focus:{level:1,xp:0}},
+    mastery:{}, keepsakes:[], chapterFlags:{}, nightLog:[], lifetimeActions:0, legacyGift:false,
+    journalTab:'campaign', lastScreen:'house', sideDone:{}, highScores:{}
   };
-  Object.entries(configs).forEach(([view,c])=>{const sec=document.querySelector(`.view[data-view="${view}"]`);if(!sec)return;let st=sec.querySelector(`[data-director-stage="${view}"]`);const html=directorStage(view,...c);if(st)st.outerHTML=html;else sec.insertAdjacentHTML('afterbegin',html)});
-  const sum=document.getElementById('tonightSummary');if(sum&&S.started&&S.nightIntent&&!sum.querySelector('.intent-badge')){const x=NIGHT_INTENTS[S.nightIntent];sum.insertAdjacentHTML('beforeend',`<div style="margin-top:9px"><span class="intent-badge">${x.emoji} Tonight: <b>${x.name}</b></span></div>`)}
-  const status=document.getElementById('sceneStatus');if(status&&S.started&&S.nightIntent&&!status.querySelector('.intent-badge')){const x=NIGHT_INTENTS[S.nightIntent];status.insertAdjacentHTML('beforeend',`<span class="intent-badge">${x.emoji} ${x.name}</span>`)}
 }
-const __renderFinalDirectorBase=render;
-render=function(){ensureDirectorState();__renderFinalDirectorBase();updateUniqueStages();renderSceneFrame()};
-const __switchFinalDirectorBase=switchView;
-switchView=function(id){__switchFinalDirectorBase(id);updateUniqueStages();renderSceneFrame()};
-ensureDirectorState();render();switchView(S.lastView||'home');
+let state = loadState();
+let currentScreen = state.lastScreen || 'house';
+let currentRoom = null;
+let activeGame = null;
 
-/* tiny Director's Cut polish */
-const __renderSceneEnergyBase=renderSceneFrame;
-renderSceneFrame=function(){__renderSceneEnergyBase();const me=document.getElementById('maxEnergy');if(me)me.textContent=S.maxEnergy+(decorBonuses().energy||0)+(S.nightBonusEnergy||0)};
-if(S.started&&!S.nightIntent)setTimeout(promptNightIntent,180);
+function loadState(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(raw){return mergeState(freshState(),JSON.parse(raw));}
+  }catch(e){}
+  const s=freshState();
+  try{ if(localStorage.getItem(LEGACY_KEY)){s.legacyGift=true;} }catch(e){}
+  return s;
+}
+function mergeState(base, saved){
+  const out={...base,...saved};
+  out.progress={...base.progress,...(saved.progress||{})};
+  out.relations={...base.relations,...(saved.relations||{})};
+  out.skills={...base.skills,...(saved.skills||{})};
+  out.mastery={...(saved.mastery||{})};
+  out.chapterFlags={...(saved.chapterFlags||{})};
+  out.sideDone={...(saved.sideDone||{})};
+  out.highScores={...(saved.highScores||{})};
+  return out;
+}
+function save(){localStorage.setItem(SAVE_KEY,JSON.stringify(state));}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2300);}
+function grade(score){return score>=95?'S':score>=85?'A':score>=66?'B':score>=58?'C':score>=42?'D':'F';}
+function scoreStars(score){return score>=90?3:score>=75?2:score>=60?1:0;}
+function skillNeed(l){return 90+l*35;}
+function gainSkill(key,amount){
+  const s=state.skills[key]; if(!s)return;
+  s.xp+=amount;
+  while(s.level<5 && s.xp>=skillNeed(s.level)){s.xp-=skillNeed(s.level);s.level++;toast(`${skillLabel(key)} reached level ${s.level}.`);}
+}
+function skillLabel(k){return ({styling:'Styling',scent:'Scentcraft',baking:'Baking',lore:'Lore',focus:'Focus'})[k]||k;}
+function relationHearts(id){return Math.floor((state.relations[id]||0)/25);}
+function chapter(){return CHAPTERS[state.chapter];}
+function objectiveValue(o){if(o.stat)return state[o.stat]||0;if(o.relation)return relationHearts(o.relation);return state.progress[o.id]||0;}
+function objectiveDone(o){return objectiveValue(o)>=o.need;}
+function chapterReady(){return chapter().objectives.length>0 && chapter().objectives.every(objectiveDone);}
+function chapterProgressPct(){const c=chapter();if(!c.objectives.length)return 100;return Math.round(c.objectives.reduce((a,o)=>a+Math.min(1,objectiveValue(o)/o.need),0)/c.objectives.length*100);}
+function nextObjective(){return chapter().objectives.find(o=>!objectiveDone(o));}
+function unlockedRoom(room){const req={atelier:0,lab:1,kitchen:2,archive:3,showcase:4}[room]??0;return state.chapter>=req;}
+function useAction(){if(state.actions<=0){toast('You’re out of actions tonight. End the night to continue.');return false;}state.actions--;state.lifetimeActions++;return true;}
+function reward({score=70,coins=8,rep=4,skill='focus',xp=20}={}){
+  const mult=score>=90?1.35:score>=75?1.15:score<50?.7:1;
+  const c=Math.round(coins*mult), r=Math.round(rep*mult), x=Math.round(xp*mult);
+  state.coins+=c;state.reputation+=r;gainSkill(skill,x);
+  state.nightLog.push({type:'action',score,coins:c,rep:r,skill});
+  save();return {coins:c,rep:r,xp:x};
+}
+function recordMastery(key,score){
+  const m=state.mastery[key]||{plays:0,best:0,total:0};m.plays++;m.best=Math.max(m.best,score);m.total+=score;state.mastery[key]=m;
+  state.highScores[key]=Math.max(state.highScores[key]||0,score);
+}
+function addProgress(id,amt=1){state.progress[id]=(state.progress[id]||0)+amt;save();}
+function addRelation(id,amt){state.relations[id]=clamp((state.relations[id]||0)+amt,0,100);save();}
+function addKeepsake(index){if(!state.keepsakes.includes(index))state.keepsakes.push(index);}
+
+function setScreen(name){currentScreen=name;currentRoom=null;state.lastScreen=name;save();render();}
+function setRoom(room){if(!unlockedRoom(room)){toast('That room is still locked by the campaign.');return;}currentRoom=room;currentScreen='room';render();}
+
+function render(){
+  renderHud();
+  $$('.mobile-dock button').forEach(b=>b.classList.toggle('active',b.dataset.nav===currentScreen || (currentScreen==='room'&&b.dataset.nav==='house')));
+  if(!state.started){renderStart();return;}
+  if(currentScreen==='house')renderHouse();
+  else if(currentScreen==='mission')renderMission();
+  else if(currentScreen==='people')renderPeople();
+  else if(currentScreen==='journal')renderJournal();
+  else if(currentScreen==='room')renderRoom(currentRoom||chapter().room);
+  else renderHouse();
+}
+function renderHud(){
+  const c=chapter();$('#coins').textContent=state.coins;$('#reputation').textContent=state.reputation;$('#actionsLeft').textContent=state.actions;
+  $('#chapterNumber').textContent=c.numeral;$('#chapterName').textContent=c.name;$('#chapterBar').style.width=chapterProgressPct()+'%';
+}
+
+function renderStart(){
+  const legacy=state.legacyGift?`<div class="mission-chip main"><small>LEGACY TRUNK DETECTED</small><b>Your old Velvet Hour save left something behind. Start the campaign to open it.</b></div>`:'';
+  $('#screen').innerHTML=`<section class="scene"><div class="scene-bg house-bg"></div>${houseArt(false)}<div class="scene-content"><div class="eyebrow">A COZY PUZZLE RPG</div><h1>The house on Nocturne Street is yours now.</h1><p class="scene-lead">Five rooms are shuttered. The Moonlight Opening won’t happen until they’re ready. Restore the house one chapter at a time, solve real challenges, help the people who wander in after dark, and decide what Velvet House becomes.</p><div class="scene-actions"><button class="btn gold" onclick="beginCampaign()">Open the envelope</button></div><div class="mission-strip">${legacy}<div class="mission-chip main"><small>HOW THIS VERSION WORKS</small><b>One main mission. Three actions per night. Every action is a minigame with a visible purpose.</b></div></div></div></section>`;
+}
+function beginCampaign(){
+  state.started=true; if(state.legacyGift){state.coins+=40;state.chapterFlags.legacy=true;toast('Legacy trunk opened: +40 coins and a little emotional baggage.');}
+  save(); showStory('prologue');
+}
+
+function houseArt(interactive=true){
+  const rooms=[['kitchen','Night Kitchen','🧁'],['archive','Archive','📚'],['atelier','Front Atelier','🪞'],['lab','Scent Lab','🧪'],['showcase','Grand Showcase','🌙'],['foyer','Foyer','🗝️']];
+  return `<div class="house-art"><div class="house-roof"></div><div class="house-frame">${rooms.map(([id,n,ic])=>{const ok=id==='foyer'||unlockedRoom(id);return `<div class="room ${id} ${ok?'unlocked':'locked'}" ${interactive&&ok&&id!=='foyer'?`onclick="setRoom('${id}')" style="cursor:pointer"`:''}><span class="room-icon">${ic}</span><span class="room-label">${n}</span>${id!=='foyer'?'<span class="window"></span>':''}</div>`}).join('')}</div></div>`;
+}
+function recommendedText(){
+  if(state.chapter>=5)return {icon:'✨',title:'After Hours',body:'Replay any restored room, improve mastery scores, or deepen a relationship.',action:`setRoom('showcase')`,label:'Enter the house'};
+  if(chapterReady()&&!state.bossDone[state.chapter])return {icon:'🏆',title:chapter().boss.name,body:`Everything is ready. ${chapter().boss.detail}`,action:`startAction('${chapter().boss.action}')`,label:'Begin chapter finale'};
+  const o=nextObjective();
+  if(!o)return {icon:'📓',title:'Check the journal',body:'You’ve completed the visible objectives.',action:`setScreen('mission')`,label:'Open mission'};
+  if(o.stat==='reputation')return {icon:'✦',title:'Build reputation',body:'Complete any chapter activity well. B-rank or better earns the best reputation.',action:`setRoom('${chapter().room}')`,label:'Go to current room'};
+  if(o.relation)return {icon:NPCS[o.relation].icon,title:`Talk to ${NPCS[o.relation].name}`,body:'Their relationship challenge is part of this chapter—not random side content.',action:`openPerson('${o.relation}')`,label:'Meet them'};
+  return {icon:actionIcon(o.action),title:o.label,body:o.detail,action:`startAction('${o.action}')`,label:'Do this next'};
+}
+function renderHouse(){
+  const rec=recommendedText();const c=chapter();
+  $('#screen').innerHTML=`<section class="scene"><div class="scene-bg house-bg"></div>${houseArt(true)}<div class="scene-content"><div class="eyebrow">NIGHT ${state.day} • ${state.actions} ACTION${state.actions===1?'':'S'} LEFT</div><h1>${state.chapter>=5?'Velvet House is open.':'Restore the house. One room at a time.'}</h1><p class="scene-lead">${state.chapter>=5?'No deadline, no checklist panic. The campaign is complete; the rooms are yours to master.':`Right now, the story is about <b>${c.name}</b>. You can explore older rooms, but the game will always point back to the next meaningful step.`}</p><div class="scene-actions"><button class="btn primary" onclick="${rec.action}">${rec.icon} ${rec.label}</button><button class="btn ghost" onclick="setScreen('mission')">🎯 See the chapter plan</button>${state.actions===0?`<button class="btn gold" onclick="endNight()">🌘 End night</button>`:''}</div><div class="mission-strip"><div class="mission-chip main"><small>RECOMMENDED NEXT</small><b>${rec.title}</b><div class="mini-progress"><i style="width:${chapterProgressPct()}%"></i></div></div><div class="mission-chip"><small>CHAPTER</small><b>${c.numeral} · ${c.name}</b></div><div class="mission-chip"><small>HOUSE REPUTATION</small><b>${state.reputation} ✦</b></div></div></div></section>`;
+}
+
+function renderMission(){
+  const c=chapter();const rec=recommendedText();
+  const objectiveHtml=c.objectives.length?c.objectives.map(o=>{
+    const val=objectiveValue(o),done=objectiveDone(o);return `<div class="objective ${done?'complete':''}"><div class="objective-icon">${done?'✓':actionIcon(o.action||'talk')}</div><div><b>${o.label}</b><small>${o.detail} · ${Math.min(val,o.need)}/${o.need}</small></div>${done?'':`<button class="btn ghost" onclick="${o.relation?`openPerson('${o.relation}')`:o.stat?`setRoom('${c.room}')`:`startAction('${o.action}')`}">Go</button>`}</div>`}).join(''):`<p class="muted">The main campaign is complete. This page is now your victory lap.</p>`;
+  $('#screen').innerHTML=`<section class="surface"><div class="surface-head"><div><div class="eyebrow">CAMPAIGN</div><h1>${c.numeral}. ${c.name}</h1></div><p>${c.summary}</p></div><div class="grid"><div class="span-8"><div class="mission-hero"><div class="eyebrow">MAIN MISSION • ${chapterProgressPct()}%</div><h2>${c.kicker}</h2><p class="muted small">Complete these in any order. The chapter finale unlocks only when the room is genuinely ready.</p><div class="objective-list">${objectiveHtml}</div>${chapterReady()&&c.boss&&!state.bossDone[state.chapter]?`<div class="divider"></div><button class="btn gold" onclick="startAction('${c.boss.action}')">🏆 Begin finale: ${c.boss.name}</button>`:''}</div></div><div class="span-4"><div class="recommended-card"><div class="eyebrow">DO THIS NEXT</div><div class="big-icon">${rec.icon}</div><h3>${rec.title}</h3><p>${rec.body}</p><button class="btn primary" onclick="${rec.action}">${rec.label}</button></div><div class="card" style="margin-top:14px"><h3>Tonight</h3><p class="small muted">You have <b>${state.actions}</b> action${state.actions===1?'':'s'} left. There is no punishment for ending early.</p>${sideQuestHtml()}${state.actions===0?`<button class="btn gold" onclick="endNight()">End the night</button>`:''}</div></div><div class="card span-12"><h3>Where this is going</h3>${chapterPathHtml()}</div></div></section>`;
+}
+function chapterPathHtml(){return `<div class="chapter-path">${CHAPTERS.slice(0,5).map((x,i)=>`<div class="chapter-node ${i<state.chapter?'done':i===state.chapter?'current':''}"><div class="node-dot">${i<state.chapter?'✓':x.numeral}</div><div><h4>${x.icon} ${x.name}</h4><p>${i<state.chapter?'Restored.':i===state.chapter?x.summary:x.reward}</p></div></div>`).join('')}</div>`;}
+function sideQuest(){
+  const ids=Object.keys(NPCS).filter(id=>state.chapter>=NPCS[id].unlock);
+  const id=ids[(state.day+state.chapter)%ids.length];
+  const key=`${state.day}-${id}`; return {id,key,n:NPCS[id]};
+}
+function sideQuestHtml(){const q=sideQuest();const done=state.sideDone[q.key];return `<div class="divider"></div><div class="side-task"><div><b>${q.n.icon} ${q.n.name} has a small favor</b><small>${done?'Done tonight.':'Optional relationship challenge · costs 1 action'}</small></div>${done?'✓':`<button class="btn ghost" onclick="openPerson('${q.id}',true)">Visit</button>`}</div>`;}
+
+function renderPeople(){
+  const cards=Object.entries(NPCS).map(([id,n])=>{const unlocked=state.chapter>=n.unlock;const hearts=relationHearts(id);return `<div class="person-card ${unlocked?'':'locked-person'}"><div class="person-art" style="background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.12),transparent 24%),linear-gradient(145deg,${n.color},#211620)">${unlocked?n.icon:'🔒'}</div><div class="person-copy"><div class="eyebrow">${unlocked?n.tagline:'LOCKED BY CAMPAIGN'}</div><h3>${unlocked?n.name:'Someone you haven’t met'}</h3><p class="small muted">${unlocked?n.intro:`Restore more of Velvet House to meet them.`}</p><div class="heartbar"><i style="width:${state.relations[id]}%"></i></div><small>${'♥'.repeat(hearts)}${'♡'.repeat(4-hearts)}</small>${unlocked?`<div style="margin-top:10px"><button class="btn ghost" onclick="openPerson('${id}')">Talk</button></div>`:''}</div></div>`}).join('');
+  $('#screen').innerHTML=`<section class="surface"><div class="surface-head"><div><div class="eyebrow">RELATIONSHIPS</div><h1>People, not random encounters.</h1></div><p>Each person enters because a chapter introduces them. Talking is a “read the room” challenge, and relationship milestones feed back into the campaign.</p></div><div class="people-grid">${cards}</div></section>`;
+}
+
+function renderJournal(){
+  const tabs=[['campaign','Campaign'],['skills','Mastery'],['keepsakes','Keepsakes'],['records','Records']];
+  const content=journalContent(state.journalTab);
+  $('#screen').innerHTML=`<section class="surface"><div class="surface-head"><div><div class="eyebrow">YOUR JOURNAL</div><h1>Everything that matters, in one place.</h1></div><p>No giant settings maze. This tracks the campaign, what you’re getting better at, and the things you’ve actually earned.</p></div><div class="journal-layout"><div class="journal-tabs">${tabs.map(([id,l])=>`<button class="${state.journalTab===id?'active':''}" onclick="setJournalTab('${id}')">${l}</button>`).join('')}</div><div class="card">${content}</div></div></section>`;
+}
+function setJournalTab(t){state.journalTab=t;save();renderJournal();}
+function journalContent(t){
+  if(t==='campaign')return `<h2>Campaign map</h2><p class="small muted">${chapter().summary}</p><div class="divider"></div>${chapterPathHtml()}`;
+  if(t==='skills')return `<h2>Challenge mastery</h2><p class="small muted">Skills improve from performance, not button presses. Best scores remain visible so there’s a reason to replay.</p><div class="divider"></div>${Object.entries(state.skills).map(([k,s])=>`<div class="skill-row"><b>${skillLabel(k)}</b><div><div class="progress"><i style="width:${s.level>=5?100:Math.round(s.xp/skillNeed(s.level)*100)}%"></i></div><small class="muted">${s.level>=5?'Mastered':`${s.xp}/${skillNeed(s.level)} XP`}</small></div><b>Lv.${s.level}</b></div>`).join('')}<div class="divider"></div><h3>Personal bests</h3>${Object.keys(state.highScores).length?Object.entries(state.highScores).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="side-task"><b>${prettyAction(k)}</b><span class="tag gold">${grade(v)} · ${v}%</span></div>`).join(''):`<p class="muted small">Complete a challenge and it’ll appear here.</p>`}`;
+  if(t==='keepsakes')return `<h2>House keepsakes</h2><p class="small muted">These are chapter trophies, not random inventory clutter.</p><div class="collection-grid">${KEEPSAKES.map((it,i)=>state.keepsakes.includes(i)?`<div class="collection-item"><span class="icon">${it[0]}</span><b>${it[1]}</b><small>${it[2]}</small></div>`:`<div class="collection-item" style="opacity:.38"><span class="icon">🔒</span><b>Locked keepsake</b><small>Complete a chapter finale.</small></div>`).join('')}</div>`;
+  return `<h2>House record</h2><div class="result-grid"><div class="result-stat"><b>${state.day}</b><small>Nights played</small></div><div class="result-stat"><b>${state.lifetimeActions}</b><small>Challenges played</small></div><div class="result-stat"><b>${state.reputation}</b><small>Reputation</small></div><div class="result-stat"><b>${state.chapter>=5?'5/5':`${state.chapter}/5`}</b><small>Rooms restored</small></div><div class="result-stat"><b>${Object.values(state.relations).reduce((a,b)=>a+Math.floor(b/25),0)}</b><small>Relationship hearts</small></div><div class="result-stat"><b>${state.keepsakes.length}</b><small>Keepsakes</small></div></div><div class="divider"></div><button class="btn ghost" onclick="exportSave()">Export save</button>`;
+}
+
+function renderRoom(room){
+  const meta={
+    atelier:{name:'The Front Atelier',icon:'🪞',eyebrow:'ROOM I',desc:'A styling mirror, one clothing rack, and exactly enough confidence to call it an atelier.',bg:'atelier-bg'},
+    lab:{name:'The Scent Lab',icon:'🧪',eyebrow:'ROOM II',desc:'Old apothecary drawers, blotter paper, glass bottles, and Mina judging your ratios from three feet away.',bg:'lab-bg'},
+    kitchen:{name:'The Night Kitchen',icon:'🧁',eyebrow:'ROOM III',desc:'Warm lights, cold counters, and Bea insisting that “a little chaotic” is a legitimate mise en place.',bg:'kitchen-bg'},
+    archive:{name:'The Locked Archive',icon:'📚',eyebrow:'ROOM IV',desc:'Shelves inside shelves. Margin notes. A suspicious amount of brass hardware. Rowan is delighted.',bg:'archive-bg'},
+    showcase:{name:'The Grand Showcase',icon:'🌙',eyebrow:'ROOM V',desc:'Everything you learned in the other rooms eventually ends up here, under one very flattering spotlight.',bg:'showcase-bg'}
+  }[room];
+  const stations=roomStations(room);
+  $('#screen').innerHTML=`<section class="room-scene"><div class="backdrop ${meta.bg}"></div>${roomArtMarkup(room)}<div class="room-inner"><div class="eyebrow">${meta.eyebrow} • ${state.actions} ACTION${state.actions===1?'':'S'} LEFT</div><h1>${meta.icon} ${meta.name}</h1><p>${meta.desc}</p><div class="scene-actions"><button class="btn ghost" onclick="setScreen('house')">← Back to house</button><button class="btn ghost" onclick="setScreen('mission')">🎯 Mission</button>${state.actions===0?`<button class="btn gold" onclick="endNight()">🌘 End night</button>`:''}</div><div class="room-stations">${stations}</div></div></section>`;
+}
+
+function roomArtMarkup(room){
+  const art={
+    atelier:`<div class="room-art atelier-art"><div class="art-window"></div><div class="art-mirror">✦</div><div class="art-rack"><i></i><span>🧥</span><span>👚</span><span>👜</span></div><div class="art-rug"></div><div class="art-lamp">●</div></div>`,
+    lab:`<div class="room-art lab-art"><div class="art-window"></div><div class="art-shelves"><b>🧴</b><b>🪻</b><b>⚗️</b><b>🍐</b><b>🧪</b><b>🌼</b></div><div class="art-table"><span>🧴</span><span>🧪</span><span>📜</span></div><div class="art-glow"></div></div>`,
+    kitchen:`<div class="room-art kitchen-art"><div class="art-window"></div><div class="art-cabinets"></div><div class="art-oven">♨</div><div class="art-counter"><span>🥣</span><span>🧁</span><span>🍰</span></div><div class="art-pendant">●</div></div>`,
+    archive:`<div class="room-art archive-art"><div class="art-books left">📚<br>📕<br>📚</div><div class="art-books right">📖<br>📚<br>📓</div><div class="art-desk">📜 &nbsp; 🗝️</div><div class="art-lampdesk">◉</div><div class="art-door">✦</div></div>`,
+    showcase:`<div class="room-art showcase-art"><div class="art-moon">☾</div><div class="art-plinth one">🧥</div><div class="art-plinth two">🧴</div><div class="art-plinth three">🍰</div><div class="art-curtain left"></div><div class="art-curtain right"></div><div class="art-stars">✦ · ✧ · ✦</div></div>`
+  };
+  return art[room]||'';
+}
+
+function roomStations(room){
+  const c=state.chapter;
+  const make=(icon,name,desc,action,purpose,disabled=false)=>`<button class="station" ${disabled?'disabled':`onclick="startAction('${action}')"`}><span class="station-icon">${icon}</span><b>${name}</b><small>${desc}</small><div class="purpose">${purpose}</div></button>`;
+  if(room==='atelier')return [
+    make('🧹','Restore & Reset','Sort the room’s chaos into the right zones.','reset-front',state.progress.frontReset?'Practice · Focus XP':'MAIN OBJECTIVE'),
+    make('🛍️','Source the Rack','Read a brief and identify the strongest thrift find.','thrift',state.progress.sourced>=2?'Practice · coins':'MAIN OBJECTIVE'),
+    make('🪞','Style a Client','Build a look by reasoning from a client brief.','style',state.progress.styled?'Practice · Styling XP':'MAIN OBJECTIVE')
+  ].join('');
+  if(room==='lab')return [
+    make('🧺','Restore Cabinet','Sort mystery bottles and tools by purpose.','reset-lab',state.progress.labReset?'Practice · Focus XP':'MAIN OBJECTIVE'),
+    make('🔬','Note Study','Classify notes by role and fragrance family.','scent-study',state.progress.scentPractice>=2?'Practice · Scentcraft XP':'MAIN OBJECTIVE'),
+    make('🧴','Blend Commission','Translate a scent brief into a balanced formula.','scent-commission',state.progress.scentCommission?'Practice · coins':'MAIN OBJECTIVE')
+  ].join('');
+  if(room==='kitchen')return [
+    make('🧽','Restore Stations','Sort kitchen equipment and rescue the prep flow.','reset-kitchen',state.progress.kitchenReset?'Practice · Focus XP':'MAIN OBJECTIVE'),
+    make('🍰','Fill an Order','Sequence a recipe, scale an ingredient, then judge doneness.','bake',state.progress.baked>=2?'Practice · Baking XP':'MAIN OBJECTIVE'),
+    make('🧾','Cost the Menu','Use unit cost and yield to choose a sustainable price.','budget',state.progress.budget?'Practice · coins':'MAIN OBJECTIVE')
+  ].join('');
+  if(room==='archive')return [
+    make('🗂️','Restore Archive','Sort records by the system hidden in their labels.','reset-archive',state.progress.archiveReset?'Practice · Focus XP':'MAIN OBJECTIVE'),
+    make('🔐','Decode a Cipher','Solve patterns, sequences, and small logic deductions.','cipher',state.progress.ciphers>=3?'Practice · Lore XP':'MAIN OBJECTIVE'),
+    make('🕯️','Recover a Fragment','Use clues from the room to identify a hidden record.','fragment',state.progress.fragments>=2?'Practice · Lore XP':'MAIN OBJECTIVE')
+  ].join('');
+  return [
+    make('🪩','Style Showcase','Build the outfit story for opening night.','final-style',state.progress.finalStyle?'Replay · Styling':'FINAL PREP'),
+    make('🧴','Opening Scent','Bottle the fragrance guests will remember.','final-scent',state.progress.finalScent?'Replay · Scentcraft':'FINAL PREP'),
+    make('🍰','Midnight Table','Finish the bake service for the opening.','final-bake',state.progress.finalBake?'Replay · Baking':'FINAL PREP'),
+    make('📜','House Inscription','Solve the final archive clue and choose the sign.','final-lore',state.progress.finalLore?'Replay · Lore':'FINAL PREP'),
+    state.chapter>=5?make('🏆','Festival Gauntlet','Replay the four-room mastery challenge.','festival','POSTGAME CHALLENGE'):''
+  ].join('');
+}
+
+function actionIcon(a=''){if(a.includes('style')||a==='thrift')return '🪞';if(a.includes('scent'))return '🧪';if(a.includes('bake')||a==='budget')return '🧁';if(a.includes('archive')||a==='cipher'||a==='fragment'||a.includes('lore'))return '📚';if(a.includes('reset'))return '🧹';if(a.includes('boss')||a==='festival')return '🏆';return '💌';}
+function prettyAction(a){return ({'reset-front':'Room Reset',thrift:'Thrift Brief',style:'Client Styling','scent-study':'Note Study','scent-commission':'Scent Commission',bake:'Bakery Order',budget:'Menu Costing',cipher:'Archive Cipher',fragment:'Memory Fragment','boss-style':'First Window','boss-scent':'House Signature','boss-bake':'Midnight Tasting','boss-archive':'Locked Room',festival:'Moonlight Opening'})[a]||a.replace(/-/g,' ').replace(/\b\w/g,m=>m.toUpperCase());}
+
+function startAction(action){
+  if(!state.started)return;
+  if(action.startsWith('boss-')||action==='festival'){
+    if(state.actions<=0){toast('You need one action to attempt a finale.');return;}
+  } else if(state.actions<=0){toast('No actions left tonight. End the night first.');return;}
+  const map={
+    'reset-front':()=>startSortGame('frontReset','Front Room Reset','house'),
+    'reset-lab':()=>startSortGame('labReset','Scent Cabinet Reset','scent'),
+    'reset-kitchen':()=>startSortGame('kitchenReset','Kitchen Reset','bake'),
+    'reset-archive':()=>startSortGame('archiveReset','Archive Reset','archive'),
+    thrift:startThriftGame,style:()=>startStyleGame('styled'),
+    'scent-study':startScentStudy,'scent-commission':()=>startScentBlend('scentCommission'),
+    bake:()=>startBakeGame('baked'),budget:startBudgetGame,cipher:startCipherGame,fragment:startFragmentGame,
+    'final-style':()=>startStyleGame('finalStyle',true),'final-scent':()=>startScentBlend('finalScent',true),'final-bake':()=>startBakeGame('finalBake',true),'final-lore':()=>startCipherGame('finalLore',true),
+    'boss-style':()=>startBoss('style'),'boss-scent':()=>startBoss('scent'),'boss-bake':()=>startBoss('bake'),'boss-archive':()=>startBoss('archive'),festival:startFestival
+  };
+  if(map[action])map[action]();else toast('That activity is not available yet.');
+}
+
+function openModal(html,theme=''){const m=$('#modal');$('#modalCard').className=`modal-card ${theme?'theme-'+theme:''}`;$('#modalCard').innerHTML=html;m.classList.remove('hidden');}
+function closeModal(){if(activeGame&&activeGame.lockClose){toast('Finish the challenge or use Abandon.');return;}$('#modal').classList.add('hidden');activeGame=null;}
+function modalHead(kicker,title,instruction,theme=''){return `<div class="modal-head"><div><div class="eyebrow">${kicker}</div><h2>${title}</h2></div><button class="close" onclick="abandonGame()">×</button></div><p class="game-instruction">${instruction}</p>`;}
+function abandonGame(){activeGame=null;$('#modal').classList.add('hidden');}
+function finishGame(key,score,{progressId=null,progressAmt=1,coins=8,rep=4,skill='focus',xp=22,relation=null,boss=false,finaleIndex=null,customMsg=''}={}){
+  recordMastery(key,score);
+  if(progressId && score>=66)addProgress(progressId,progressAmt);
+  if(relation && score>=58)addRelation(relation,score>=85?15:10);
+  const r=reward({score,coins,rep,skill,xp});
+  const g=grade(score);activeGame=null;
+  save();
+  openModal(`${modalHead('CHALLENGE COMPLETE',`${g}-Rank · ${score}%`,'Your result changed something concrete in the house.')}<div class="result-grade">${g}</div><div class="result-grid"><div class="result-stat"><b>+${r.coins}</b><small>coins</small></div><div class="result-stat"><b>+${r.rep}</b><small>reputation</small></div><div class="result-stat"><b>+${r.xp}</b><small>${skillLabel(skill)} XP</small></div></div><p class="small muted">${customMsg||resultMessage(score,progressId)}</p><button class="btn primary" onclick="closeResultAndRender()">Back to the house</button>`);
+}
+function closeResultAndRender(){closeModal();render();}
+function resultMessage(score,pid){if(score>=90)return pid?'That was strong enough to advance the objective—and then some.':'Personal best material.';if(score>=66)return pid?'Objective advanced. B-rank is enough to count.':'Solid work.';if(score>=58)return 'You learned from it, but this chapter objective needs a B-rank or better.';return 'No penalty beyond the spent action. Try again when you feel like it.';}
+
+// -------- SORT / RESTORATION --------
+const SORT_SETS={
+  front:[['Silver chain belt','Display'],['Empty coffee cup','Trash'],['Price tags','Worktable'],['Burgundy blouse','Display'],['Loose receipts','Worktable'],['Broken hanger','Trash']],
+  lab:[['Blotter strips','Tools'],['Vanilla absolute','Materials'],['Cracked vial','Discard'],['Glass pipette','Tools'],['Bergamot oil','Materials'],['Mystery sludge','Discard']],
+  kitchen:[['Offset spatula','Tools'],['Expired cream','Discard'],['Flour bag','Pantry'],['Whisk','Tools'],['Sugar jar','Pantry'],['Burnt parchment','Discard']],
+  archive:[['Undated flyer','Ephemera'],['Ledger volume','Records'],['Molded clipping','Quarantine'],['Receipt book','Records'],['Festival ticket','Ephemera'],['Water-damaged file','Quarantine']]
+};
+function startSortGame(progressId,title,theme){
+  if(!useAction())return;
+  const set=progressId.includes('lab')?SORT_SETS.lab:progressId.includes('kitchen')?SORT_SETS.kitchen:progressId.includes('archive')?SORT_SETS.archive:SORT_SETS.front;
+  activeGame={type:'sort',progressId,title,theme,items:shuffle(set),i:0,correct:0};renderSortGame();
+}
+function renderSortGame(){const g=activeGame,item=g.items[g.i];const cats=[...new Set(g.items.map(x=>x[1]))];openModal(`${modalHead('RESTORATION CHALLENGE',g.title,'Sort each object into the correct zone. You need at least 4/6 for B-rank.',g.theme)}<div class="game-status"><span class="score-pill">Item ${g.i+1}/${g.items.length}</span><span class="score-pill">Correct ${g.correct}</span></div><div class="brief-card"><blockquote>${item[0]}</blockquote></div><div class="puzzle-grid ${cats.length===3?'three':'two'}">${cats.map(c=>`<button class="puzzle-btn" onclick="sortPick('${c.replace(/'/g,"\\'")}')">${c}</button>`).join('')}</div>`,`$${g.theme}`.slice(1));}
+function sortPick(choice){const g=activeGame;if(!g)return;if(choice===g.items[g.i][1])g.correct++;g.i++;if(g.i>=g.items.length){const score=Math.round(g.correct/g.items.length*100);finishGame(g.progressId,score,{progressId:g.progressId,coins:5,rep:4,skill:'focus',xp:25});}else renderSortGame();}
+
+// -------- THRIFT BRIEF --------
+const THRIFT_ROUNDS=[
+  {brief:'Find something dark, textured, and easy to build an outfit around.',options:[['Brown leopard shoulder bag',['dark','texture','versatile']],['Neon floral scarf',['bright','floral']],['White sequin shrug',['light','sparkle']],['Plain gray tee',['neutral']]],need:['dark','texture','versatile']},
+  {brief:'The window needs one silver accent without turning futuristic.',options:[['Silver chain belt',['silver','accent']],['Chrome space boots',['silver','futuristic']],['Gold charm necklace',['gold','accent']],['Black cardigan',['dark','basic']]],need:['silver','accent']},
+  {brief:'Jules wants “Y2K, but grown.” Choose the strongest piece.',options:[['Burgundy fitted moto jacket',['y2k','polished','burgundy']],['Hot-pink slogan tee',['y2k','juvenile']],['Office blazer',['polished']],['Cow-print pajama pants',['novelty']]],need:['y2k','polished']}
+];
+function startThriftGame(){if(!useAction())return;activeGame={type:'thrift',rounds:shuffle(THRIFT_ROUNDS).slice(0,3),i:0,correct:0};renderThrift();}
+function renderThrift(){const g=activeGame,r=g.rounds[g.i];openModal(`${modalHead('SOURCE THE RACK','Thrift Brief','Read the brief. Pick the piece that satisfies the most important constraints—not simply the rarest-looking thing.','style')}<div class="game-status"><span class="score-pill">Brief ${g.i+1}/3</span><span class="score-pill">Correct ${g.correct}</span></div><div class="brief-card"><blockquote>“${r.brief}”</blockquote></div><div class="puzzle-grid two">${shuffle(r.options.map((o,i)=>({o,i}))).map(x=>`<button class="puzzle-btn" onclick="thriftPick(${x.i})"><b>${x.o[0]}</b><br><small class="muted">${x.o[1].join(' · ')}</small></button>`).join('')}</div>`,'style');}
+function thriftPick(i){const g=activeGame,r=g.rounds[g.i];const tags=r.options[i][1];const best=Math.max(...r.options.map(o=>r.need.filter(n=>o[1].includes(n)).length));const got=r.need.filter(n=>tags.includes(n)).length;if(got===best)g.correct++;g.i++;if(g.i>=g.rounds.length){const score=Math.round(g.correct/3*100);if(score>=66)addProgress('sourced',1);finishGame('thrift',score,{coins:12,rep:5,skill:'styling',xp:24,customMsg:score>=66?'One display-worthy piece is now sourced for the atelier.':'The rack stays a little empty. Replay when you want another shot.'});}else renderThrift();}
+
+// -------- STYLE --------
+const STYLE_ROUNDS=[
+ {brief:'Dinner after work. She wants dark Y2K, but still intentional.',answers:['Burgundy fitted top + black flares + silver bag','Logo hoodie + pajama pants','Three leopard pieces together'],good:0},
+ {brief:'The outfit already has patterned jeans. What keeps it balanced?',answers:['Add another loud patterned top','Use a simpler top and let the jeans lead','Match every accessory to the pattern'],good:1},
+ {brief:'She wants visual interest without feeling overdressed.',answers:['Mix one texture with a clean silhouette','Add maximum jewelry everywhere','Remove every accessory'],good:0}
+];
+function startStyleGame(progressId,final=false){if(!useAction())return;activeGame={type:'style',progressId,final,rounds:shuffle(STYLE_ROUNDS),i:0,correct:0};renderStyleGame();}
+function renderStyleGame(){const g=activeGame,r=g.rounds[g.i];openModal(`${modalHead(g.final?'OPENING PREP':'CLIENT CHALLENGE',g.final?'Showcase Styling':'Style a Client','Use the brief to choose the strongest styling decision. Three decisions make the full look.','style')}<div class="game-status"><span class="score-pill">Decision ${g.i+1}/3</span><span class="score-pill">Correct ${g.correct}</span></div><div class="brief-card"><blockquote>${r.brief}</blockquote></div><div class="puzzle-grid">${r.answers.map((a,i)=>`<button class="puzzle-btn" onclick="stylePick(${i})">${a}</button>`).join('')}</div>`,'style');}
+function stylePick(i){const g=activeGame,r=g.rounds[g.i];if(i===r.good)g.correct++;g.i++;if(g.i>=3){const score=Math.round(g.correct/3*100);finishGame(g.final?'final-style':'style',score,{progressId:g.progressId,coins:g.final?14:10,rep:g.final?9:6,skill:'styling',xp:g.final?35:27});}else renderStyleGame();}
+
+// -------- SCENT STUDY --------
+const NOTES=[
+ {n:'Bergamot',role:'Top',family:'Citrus'},{n:'Pear',role:'Top',family:'Fruity'},{n:'Orange Blossom',role:'Heart',family:'Floral'},{n:'Jasmine',role:'Heart',family:'Floral'},{n:'Vanilla',role:'Base',family:'Gourmand'},{n:'Sandalwood',role:'Base',family:'Woody'},{n:'Marshmallow',role:'Base',family:'Gourmand'},{n:'Pink Pepper',role:'Top',family:'Spicy'}
+];
+function startScentStudy(){if(!useAction())return;activeGame={type:'scentStudy',questions:shuffle(NOTES).slice(0,5),i:0,correct:0,phase:0};renderScentStudy();}
+function renderScentStudy(){const g=activeGame,n=g.questions[g.i];const askRole=g.phase===0;const opts=askRole?['Top','Heart','Base']:['Citrus','Fruity','Floral','Gourmand','Woody','Spicy'];openModal(`${modalHead('SCENT STUDY','Build the Note Pyramid',askRole?'First: where does this note usually sit in a simple fragrance pyramid?':'Now: which family best describes it?','scent')}<div class="game-status"><span class="score-pill">Note ${g.i+1}/${g.questions.length}</span><span class="score-pill">Correct ${g.correct}</span></div><div class="brief-card"><blockquote>${n.n}</blockquote></div><div class="puzzle-grid three">${opts.map(o=>`<button class="puzzle-btn" onclick="scentStudyPick('${o}')">${o}</button>`).join('')}</div>`,'scent');}
+function scentStudyPick(v){const g=activeGame,n=g.questions[g.i];const correct=g.phase===0?n.role:n.family;if(v===correct)g.correct++;if(g.phase===0){g.phase=1;renderScentStudy();}else{g.phase=0;g.i++;if(g.i>=g.questions.length){const score=Math.round(g.correct/(g.questions.length*2)*100);finishGame('scent-study',score,{progressId:'scentPractice',coins:7,rep:4,skill:'scent',xp:30});}else renderScentStudy();}}
+
+// -------- SCENT BLEND --------
+const SCENT_BRIEFS=[
+ {text:'Sweet and soft, but with enough brightness that it never becomes syrupy.',best:{top:'Bergamot',heart:'Orange Blossom',base:'Vanilla'}},
+ {text:'Fluffy gourmand with a clean floral center and a playful opening.',best:{top:'Pear',heart:'Jasmine',base:'Marshmallow'}},
+ {text:'Warm, polished, and less dessert-like than the other house blends.',best:{top:'Pink Pepper',heart:'Orange Blossom',base:'Sandalwood'}}
+];
+function startScentBlend(progressId,final=false){if(!useAction())return;const brief=final?SCENT_BRIEFS[0]:pick(SCENT_BRIEFS);activeGame={type:'scentBlend',progressId,final,brief,picks:{top:null,heart:null,base:null},phase:'notes'};renderScentBlend();}
+function renderScentBlend(){const g=activeGame;if(g.phase==='notes'){
+  const groups={top:NOTES.filter(n=>n.role==='Top'),heart:NOTES.filter(n=>n.role==='Heart'),base:NOTES.filter(n=>n.role==='Base')};
+  openModal(`${modalHead(g.final?'OPENING PREP':'COMMISSION','Translate the Scent Brief','Choose one top, heart, and base note. Then you’ll balance the formula.','scent')}<div class="brief-card"><blockquote>“${g.brief.text}”</blockquote></div><div class="perfume-pyramid">${['top','heart','base'].map(role=>`<div class="pyramid-col"><div class="eyebrow">${role.toUpperCase()}</div>${groups[role].map(n=>`<button class="note-chip ${g.picks[role]===n.n?'selected':''}" onclick="pickBlendNote('${role}','${n.n}')">${n.n}<br><small class="muted">${n.family}</small></button>`).join('')}</div>`).join('')}</div><button class="btn primary" ${Object.values(g.picks).every(Boolean)?'':'disabled'} onclick="blendToBalance()">Balance formula →</button>`,'scent');
+ }else renderBlendBalance();}
+function pickBlendNote(role,n){activeGame.picks[role]=n;renderScentBlend();}
+function blendToBalance(){activeGame.phase='balance';activeGame.ratio=35;renderBlendBalance();}
+function renderBlendBalance(){const g=activeGame;openModal(`${modalHead('FORMULATION','Balance the Accord','Aim for the highlighted zone. The marker moves; stop it when the blend feels balanced.','scent')}<div class="brief-card"><b>${g.picks.top} / ${g.picks.heart} / ${g.picks.base}</b><p class="small muted">Think “lift → body → lasting warmth,” not equal amounts.</p></div><div class="meter"><div class="meter-target" style="left:43%;width:18%"></div><div id="blendMarker" class="meter-marker" style="left:0"></div></div><div style="margin-top:15px"><button class="btn gold" onclick="stopBlendMeter()">Bottle it</button></div>`,'scent');startMeter('blendMarker');}
+let meterTimer=null,meterPos=0,meterDir=1;
+function startMeter(id){clearInterval(meterTimer);meterPos=2;meterDir=1;meterTimer=setInterval(()=>{meterPos+=meterDir*2;if(meterPos>=98||meterPos<=2)meterDir*=-1;const el=document.getElementById(id);if(el)el.style.left=meterPos+'%';else clearInterval(meterTimer);},28);}
+function stopBlendMeter(){clearInterval(meterTimer);const g=activeGame;const noteScore=['top','heart','base'].reduce((s,k)=>s+(g.picks[k]===g.brief.best[k]?1:0),0)/3*70;const balance=Math.max(0,30-Math.abs(meterPos-52)*1.4);const score=Math.round(clamp(noteScore+balance,0,100));finishGame(g.final?'final-scent':'scent-commission',score,{progressId:g.progressId,coins:g.final?15:12,rep:g.final?9:6,skill:'scent',xp:g.final?38:30});}
+
+// -------- BAKING --------
+const BAKE_ORDERS=[
+ {name:'Carrot Loaf',steps:['Mix dry ingredients','Whisk wet ingredients','Fold wet into dry','Fold in carrots','Bake'],scale:{q:'A recipe uses 1½ cups flour. Half batch?',a:'¾ cup',opts:['¾ cup','1 cup','½ cup']},done:{q:'Toothpick has a few moist crumbs, no wet batter. What now?',a:'Pull it',opts:['Pull it','Bake 15 more minutes','Turn temperature way up']}},
+ {name:'Fudge Brownies',steps:['Melt butter','Whisk sugar + eggs','Add cocoa and flour','Fold until just combined','Bake'],scale:{q:'Recipe uses ⅔ cup cocoa. Half batch?',a:'⅓ cup',opts:['⅓ cup','½ cup','¼ cup']},done:{q:'Edges set, center has fudgy crumbs—not liquid. What now?',a:'Pull it',opts:['Pull it','Wait until toothpick is bone-dry','Add water']}},
+ {name:'Vanilla Snack Cake',steps:['Cream butter + sugar','Beat in eggs','Add dry + milk alternately','Spread in pan','Bake'],scale:{q:'Recipe uses ¾ cup sugar. Double batch?',a:'1½ cups',opts:['1½ cups','1 cup','2¼ cups']},done:{q:'Center springs back lightly and tester is clean. What now?',a:'Pull it',opts:['Pull it','Bake until dark brown','Open oven and leave it inside']}},
+];
+function startBakeGame(progressId,final=false){if(!useAction())return;activeGame={type:'bake',progressId,final,order:pick(BAKE_ORDERS),chosen:[],phase:'sequence',correct:0};renderBake();}
+function renderBake(){const g=activeGame;if(g.phase==='sequence'){
+  const remaining=g.order.steps.filter(x=>!g.chosen.includes(x));openModal(`${modalHead(g.final?'OPENING PREP':'BAKERY ORDER',g.order.name,'Build the recipe in order. Pick the next correct step each time.','bake')}<div class="game-status"><span class="score-pill">Sequence ${g.chosen.length}/${g.order.steps.length}</span></div><div class="sequence-row">${g.chosen.map(x=>`<span class="sequence-card">✓ ${x}</span>`).join('')}</div><div class="divider"></div><div class="puzzle-grid two">${shuffle(remaining).map(x=>`<button class="puzzle-btn" onclick="bakeStep('${x.replace(/'/g,"\\'")}')">${x}</button>`).join('')}</div>`,'bake');
+ }else if(g.phase==='scale')openModal(`${modalHead('BAKERY ORDER','Scale the Recipe','A little fraction math before the pan goes in.','bake')}<div class="brief-card"><blockquote>${g.order.scale.q}</blockquote></div><div class="puzzle-grid three">${g.order.scale.opts.map(x=>`<button class="puzzle-btn" onclick="bakeScale('${x}')">${x}</button>`).join('')}</div>`,'bake');
+ else openModal(`${modalHead('BAKERY ORDER','Judge Doneness','The timer is a clue, not a verdict. Read the bake.','bake')}<div class="brief-card"><blockquote>${g.order.done.q}</blockquote></div><div class="puzzle-grid">${g.order.done.opts.map(x=>`<button class="puzzle-btn" onclick="bakeDone('${x.replace(/'/g,"\\'")}')">${x}</button>`).join('')}</div>`,'bake');}
+function bakeStep(x){const g=activeGame;const expected=g.order.steps[g.chosen.length];if(x===expected)g.correct++;g.chosen.push(x);if(g.chosen.length>=g.order.steps.length){g.phase='scale';renderBake();}else renderBake();}
+function bakeScale(x){const g=activeGame;if(x===g.order.scale.a)g.correct+=2;g.phase='done';renderBake();}
+function bakeDone(x){const g=activeGame;if(x===g.order.done.a)g.correct+=2;const score=Math.round(g.correct/(g.order.steps.length+4)*100);finishGame(g.final?'final-bake':'bake',score,{progressId:g.progressId,coins:g.final?16:12,rep:g.final?9:6,skill:'baking',xp:g.final?38:30});}
+
+// -------- BUDGET --------
+const BUDGET_Q=[
+ {q:'12 brownies cost $9.60 to make. Ingredient cost per brownie?',opts:['$0.80','$1.20','$0.60'],good:0},
+ {q:'A loaf costs $4 to make. Which price leaves the strongest room for packaging + labor?',opts:['$4.25','$5.00','$8.00'],good:2},
+ {q:'A $16 batch makes 8 slices. At $5/slice, gross revenue?',opts:['$24','$40','$80'],good:1}
+];
+function startBudgetGame(){if(!useAction())return;activeGame={type:'budget',qs:shuffle(BUDGET_Q),i:0,correct:0};renderBudget();}
+function renderBudget(){const g=activeGame,q=g.qs[g.i];openModal(`${modalHead('KITCHEN MANAGEMENT','Cost the Menu','Tiny business math. No spreadsheet dungeon required.','bake')}<div class="game-status"><span class="score-pill">Question ${g.i+1}/3</span></div><div class="brief-card"><blockquote>${q.q}</blockquote></div><div class="puzzle-grid three">${q.opts.map((x,i)=>`<button class="puzzle-btn" onclick="budgetPick(${i})">${x}</button>`).join('')}</div>`,'bake');}
+function budgetPick(i){const g=activeGame;if(i===g.qs[g.i].good)g.correct++;g.i++;if(g.i>=3){const score=Math.round(g.correct/3*100);finishGame('budget',score,{progressId:'budget',coins:10,rep:4,skill:'focus',xp:25});}else renderBudget();}
+
+// -------- ARCHIVE --------
+const CIPHERS=[
+ {q:'2 · 4 · 8 · 16 · ?',opts:['18','24','32','30'],good:2,why:'Each number doubles.'},
+ {q:'A1 · C3 · E5 · G7 · ?',opts:['H8','I9','J10','I8'],good:1,why:'Letters and numbers both advance by two.'},
+ {q:'The margin marks pages 3, 6, 12, 24. Next?',opts:['27','30','48','36'],good:2,why:'The sequence doubles after 3.'},
+ {q:'If NORTH = 5 and EAST = 4, ARCHIVE = ?',opts:['7','6','8','5'],good:0,why:'The code is simply word length.'}
+];
+function startCipherGame(progressId='ciphers',final=false){if(!useAction())return;activeGame={type:'cipher',progressId,final,qs:shuffle(CIPHERS).slice(0,3),i:0,correct:0};renderCipher();}
+function renderCipher(){const g=activeGame,q=g.qs[g.i];openModal(`${modalHead(g.final?'OPENING PREP':'ARCHIVE PUZZLE',g.final?'House Inscription':'Decode the Margin','Solve the pattern. The Archive rewards noticing rules, not guessing lore.','archive')}<div class="game-status"><span class="score-pill">Cipher ${g.i+1}/3</span><span class="score-pill">Solved ${g.correct}</span></div><div class="brief-card"><blockquote>${q.q}</blockquote></div><div class="puzzle-grid two">${q.opts.map((x,i)=>`<button class="puzzle-btn" onclick="cipherPick(${i})">${x}</button>`).join('')}</div>`,'archive');}
+function cipherPick(i){const g=activeGame;if(i===g.qs[g.i].good)g.correct++;g.i++;if(g.i>=g.qs.length){const score=Math.round(g.correct/3*100);finishGame(g.final?'final-lore':'cipher',score,{progressId:g.progressId,coins:g.final?14:9,rep:g.final?9:5,skill:'lore',xp:g.final?38:30});}else renderCipher();}
+
+// -------- FRAGMENT DEDUCTION --------
+const FRAGMENTS=[
+ {clue:'The missing record is newer than the 1988 ledger, older than the 1996 flyer, and it is not a receipt.',opts:[['1992 Festival Program',true],['1984 Receipt Book',false],['1999 Menu Card',false]],title:'Fragment: Opening Night'},
+ {clue:'Look for the item filed under a person, not an event; the initials are V.H., and the paper mentions “Nocturne.”',opts:[['Velma Hart letter',true],['Moonlight Festival poster',false],['Kitchen inventory',false]],title:'Fragment: The First Owner'}
+];
+function startFragmentGame(){if(!useAction())return;const idx=Math.min(state.progress.fragments,1);const f=FRAGMENTS[idx];activeGame={type:'fragment',f};openModal(`${modalHead('ARCHIVE SEARCH',f.title,'Use every clue. There is one record that satisfies all of them.','archive')}<div class="brief-card"><blockquote>${f.clue}</blockquote></div><div class="puzzle-grid">${f.opts.map((x,i)=>`<button class="puzzle-btn" onclick="fragmentPick(${i})">${x[0]}</button>`).join('')}</div>`,'archive');}
+function fragmentPick(i){const g=activeGame;const score=g.f.opts[i][1]?100:45;finishGame('fragment',score,{progressId:'fragments',coins:8,rep:6,skill:'lore',xp:28,customMsg:score>=66?'You recovered a real piece of the house’s history. It has been added to the Archive.':'Wrong record. The clue stays available for another night.'});}
+
+// -------- RELATIONSHIP CHALLENGE --------
+function openPerson(id,side=false){const n=NPCS[id];if(!n||state.chapter<n.unlock){toast('You haven’t met them yet.');return;}currentScreen='people';if(state.actions<=0){toast('No actions left tonight.');renderPeople();return;}const q=pick(n.talks);activeGame={type:'talk',id,n,q,side};renderDialogue();}
+function renderDialogue(){const g=activeGame,n=g.n,q=g.q;$('#screen').innerHTML=`<section class="dialogue-scene"><div class="dialogue-inner"><div class="eyebrow">READ THE ROOM • RELATIONSHIP CHALLENGE</div><div class="dialogue-stage"><div class="scene-detail"></div><div class="portrait-large">${n.icon}</div><div class="dialogue-box"><div class="dialogue-name">${n.name}</div><div class="dialogue-text">${q.q}</div><div class="choice-list">${q.choices.map((c,i)=>`<button class="choice" onclick="talkPick(${i})">${c}</button>`).join('')}</div></div></div><div class="scene-actions"><button class="btn ghost" onclick="abandonTalk()">← Leave without spending an action</button></div></div></section>`;}
+function abandonTalk(){activeGame=null;setScreen('people');}
+function talkPick(i){const g=activeGame;if(!useAction()){setScreen('people');return;}const score=i===g.q.good?100:55;const gain=score>=85?18:7;addRelation(g.id,gain);if(g.side)state.sideDone[g.side?`${state.day}-${g.id}`:'']=true;recordMastery(`talk-${g.id}`,score);const r=reward({score,coins:3,rep:3,skill:'focus',xp:15});save();activeGame=null;openModal(`${modalHead('RELATIONSHIP','You read the room.','People remember whether you actually listened.')}<div class="result-grade">${grade(score)}</div><p>${score>=85?`${g.n.name} looks impressed. +${gain} bond.`:`Not disastrous, but ${g.n.name} definitely files that answer away. +${gain} bond.`}</p><button class="btn primary" onclick="closeDialogueResult()">Continue</button>`);}
+function closeDialogueResult(){closeModal();setScreen('people');}
+
+// -------- BOSSES --------
+function startBoss(kind){if(!chapterReady()){toast('Finish the chapter objectives first.');return;}if(!useAction())return;const cfg={
+ style:{title:'The First Window',desc:'Three briefs. No hints. Score B or better to open the next room.',qs:STYLE_ROUNDS},
+ scent:{title:'House Signature No. 01',desc:'Prove you understand note roles and balance.',qs:null},
+ bake:{title:'The Midnight Tasting',desc:'A final order with sequence, math, and doneness.',qs:null},
+ archive:{title:'The Room Behind the Room',desc:'A chained logic lock with four questions.',qs:CIPHERS}
+ }[kind];
+ activeGame={type:'boss',kind,cfg,step:0,correct:0};
+ if(kind==='style')renderBossQuestions();else if(kind==='archive')renderBossQuestions();else if(kind==='scent')renderBossScent();else renderBossBake();
+}
+function renderBossQuestions(){const g=activeGame,qs=g.cfg.qs,q=qs[g.step];const opts=q.answers||q.opts;const good=q.good;openModal(`${modalHead('CHAPTER FINALE',g.cfg.title,g.cfg.desc,g.kind==='archive'?'archive':'style')}<div class="game-status"><span class="score-pill">Stage ${g.step+1}/${qs.length}</span><span class="score-pill">Correct ${g.correct}</span></div><div class="brief-card"><blockquote>${q.brief||q.q}</blockquote></div><div class="puzzle-grid">${opts.map((x,i)=>`<button class="puzzle-btn" onclick="bossQuestionPick(${i},${good})">${x}</button>`).join('')}</div>`,g.kind==='archive'?'archive':'style');}
+function bossQuestionPick(i,good){const g=activeGame;if(i===good)g.correct++;g.step++;if(g.step>=g.cfg.qs.length){const score=Math.round(g.correct/g.cfg.qs.length*100);finishBoss(score);}else renderBossQuestions();}
+function renderBossScent(){const g=activeGame;g.sq=g.sq||shuffle(NOTES).slice(0,6);const n=g.sq[g.step];openModal(`${modalHead('CHAPTER FINALE','House Signature No. 01','Classify six notes correctly. This is the knowledge check before the bottle gets your house name.','scent')}<div class="game-status"><span class="score-pill">Note ${g.step+1}/6</span><span class="score-pill">Correct ${g.correct}</span></div><div class="brief-card"><blockquote>${n.n}</blockquote></div><div class="puzzle-grid three">${['Top','Heart','Base'].map(x=>`<button class="puzzle-btn" onclick="bossScentPick('${x}')">${x}</button>`).join('')}</div>`,'scent');}
+function bossScentPick(v){const g=activeGame;if(v===g.sq[g.step].role)g.correct++;g.step++;if(g.step>=6)finishBoss(Math.round(g.correct/6*100));else renderBossScent();}
+function renderBossBake(){const g=activeGame;g.bq=g.bq||[
+ {q:'Half of 1½ cups flour?',o:['¾ cup','1 cup','½ cup'],a:0},{q:'What prevents a tough cake crumb?',o:['Mix forever','Mix just until combined','Add extra flour'],a:1},{q:'Tester has wet batter?',o:['Pull it','Keep baking and recheck','Freeze it'],a:1},{q:'24 cupcakes, 6 per box. Boxes needed?',o:['3','4','6'],a:1}
+];const q=g.bq[g.step];openModal(`${modalHead('CHAPTER FINALE','The Midnight Tasting','Four rapid decisions. Bea is absolutely pretending not to watch.','bake')}<div class="game-status"><span class="score-pill">Stage ${g.step+1}/4</span></div><div class="brief-card"><blockquote>${q.q}</blockquote></div><div class="puzzle-grid three">${q.o.map((x,i)=>`<button class="puzzle-btn" onclick="bossBakePick(${i})">${x}</button>`).join('')}</div>`,'bake');}
+function bossBakePick(i){const g=activeGame;if(i===g.bq[g.step].a)g.correct++;g.step++;if(g.step>=4)finishBoss(Math.round(g.correct/4*100));else renderBossBake();}
+function finishBoss(score){const idx=state.chapter;recordMastery(`boss-${idx}`,score);const passed=score>=66;if(passed){state.bossDone[idx]=true;addKeepsake(idx);state.reputation+=15;state.coins+=20;state.nightLog.push({type:'finale',score,chapter:idx});save();activeGame=null;openModal(`${modalHead('CHAPTER COMPLETE',`${grade(score)}-Rank · ${CHAPTERS[idx].boss.name}`,'You proved the room works. The next part of the house can finally open.')}<div class="result-grade">${grade(score)}</div><p>${chapterCompleteStory(idx)}</p><div class="result-grid"><div class="result-stat"><b>+20</b><small>coins</small></div><div class="result-stat"><b>+15</b><small>reputation</small></div><div class="result-stat"><b>${KEEPSAKES[idx][0]}</b><small>keepsake</small></div></div><button class="btn gold" onclick="advanceChapter()">Open the next door →</button>`);}else{save();activeGame=null;openModal(`${modalHead('FINALE ATTEMPT',`${grade(score)}-Rank · Not quite`,'No chapter reset. No lost progress. You just need B-rank or better on the finale.')}<div class="result-grade">${grade(score)}</div><p class="small muted">Your objectives remain complete. Try the finale again on another action.</p><button class="btn primary" onclick="closeResultAndRender()">Back to house</button>`);}}
+function chapterCompleteStory(i){return [
+  'Jules hangs the burgundy jacket in the window. Someone outside actually stops to look. The house has its first reason to keep the lights on.',
+  'Mina writes “Velvet House No. 01” on the label in tiny perfect lettering. The next door clicks open while neither of you is touching it.',
+  'Bea leaves a handwritten tasting card on the counter. Behind the pantry shelving, you notice a seam in the wall that absolutely was not there yesterday.',
+  'The last brass lock opens. Inside is the original moon-shaped house sign—and an invitation that was apparently waiting decades for someone to finish the rooms.'
+ ][i]||'The house changes around you.';}
+function advanceChapter(){closeModal();state.chapter=Math.min(state.chapter+1,5);save();currentScreen='house';render();toast(`${chapter().icon} ${chapter().name} unlocked.`);}
+
+// -------- FESTIVAL --------
+function startFestival(){if(state.chapter<4||!chapterReady()){toast('Finish the opening preparations first.');return;}if(!useAction())return;activeGame={type:'festival',step:0,correct:0,qs:[
+ {room:'STYLE',q:'Patterned jeans are the focal point. Best supporting top?',o:['Simple fitted black top','Leopard blouse','Another printed top'],a:0},
+ {room:'SCENT',q:'Which note usually gives the longest-lasting foundation?',o:['Bergamot','Vanilla','Pear'],a:1},
+ {room:'BAKE',q:'A half batch of ¾ cup sugar is…',o:['⅜ cup','½ cup','¼ cup'],a:0},
+ {room:'ARCHIVE',q:'4 · 8 · 16 · 32 · ?',o:['40','48','64'],a:2}
+ ]};renderFestival();}
+function renderFestival(){const g=activeGame,q=g.qs[g.step];openModal(`${modalHead('THE MOONLIGHT OPENING',`${q.room} · Stage ${g.step+1}/4`,'One challenge from every restored room. This is the whole campaign compressed into four decisions.','house')}<div class="game-status"><span class="score-pill">Correct ${g.correct}</span><span class="score-pill">Stage ${g.step+1}/4</span></div><div class="brief-card"><blockquote>${q.q}</blockquote></div><div class="puzzle-grid three">${q.o.map((x,i)=>`<button class="puzzle-btn" onclick="festivalPick(${i})">${x}</button>`).join('')}</div>`,'house');}
+function festivalPick(i){const g=activeGame;if(i===g.qs[g.step].a)g.correct++;g.step++;if(g.step>=4){const score=Math.round(g.correct/4*100);if(score>=66){state.bossDone[4]=true;addKeepsake(4);state.reputation+=25;state.coins+=30;recordMastery('festival',score);save();activeGame=null;openModal(`${modalHead('VELVET HOUSE IS OPEN',`${grade(score)}-Rank · Moonlight Opening`,'The campaign is complete. Nothing disappears; the house simply becomes yours.')}<div class="result-grade">${grade(score)}</div><p>The sign goes above the door. Jules fixes the display. Mina lights the scent bar. Bea claims the kitchen. Rowan pretends the Archive was always supposed to open. For the first time, the house feels less like a project and more like a place.</p><button class="btn gold" onclick="finishCampaign()">Enter After Hours ✦</button>`);}else{recordMastery('festival',score);save();activeGame=null;openModal(`${modalHead('OPENING REHEARSAL',`${grade(score)}-Rank`,'The house stays ready. You only need to replay the gauntlet when you want another shot.')}<div class="result-grade">${grade(score)}</div><button class="btn primary" onclick="closeResultAndRender()">Back to house</button>`);}}else renderFestival();}
+function finishCampaign(){closeModal();state.chapter=5;save();currentScreen='house';render();}
+
+// -------- NIGHT LOOP --------
+function endNight(){
+  const actionsUsed=state.nightLog.filter(x=>x.type==='action'||x.type==='finale').length;
+  const avg=actionsUsed?Math.round(state.nightLog.filter(x=>x.score!=null).reduce((a,x)=>a+x.score,0)/state.nightLog.filter(x=>x.score!=null).length):0;
+  const rep=state.nightLog.reduce((a,x)=>a+(x.rep||0),0),coins=state.nightLog.reduce((a,x)=>a+(x.coins||0),0);
+  $('#screen').innerHTML=`<section class="recap"><div class="eyebrow">NIGHT ${state.day} COMPLETE</div><div class="recap-emblem">${actionsUsed?grade(avg):'☾'}</div><h1>${nightTitle(avg,actionsUsed)}</h1><p class="muted">${nightLine()}</p><div class="recap-summary"><div class="recap-box"><b>${actionsUsed}</b><small>actions used</small></div><div class="recap-box"><b>${avg||'—'}${avg?'%':''}</b><small>average score</small></div><div class="recap-box"><b>+${rep}</b><small>reputation tonight</small></div></div><button class="btn gold" onclick="startNextNight()">Start night ${state.day+1} →</button></section>`;
+  currentScreen='recap';
+}
+function nightTitle(avg,n){if(!n)return 'A quiet night still counts.';if(avg>=90)return 'You were locked in.';if(avg>=75)return 'The house moved forward.';return 'Progress, with fingerprints on it.';}
+function nightLine(){const rec=recommendedText();return state.chapter>=5?'The lights stay on as long as you want them to.':`Next time, the clearest path is still: ${rec.title}.`;}
+function startNextNight(){state.day++;state.actions=3;state.nightLog=[];save();currentScreen='house';render();}
+
+// -------- STORY --------
+function showStory(which){
+  if(which==='prologue'){
+    $('#screen').innerHTML=`<section class="dialogue-scene"><div class="dialogue-inner"><div class="eyebrow">PROLOGUE</div><div class="dialogue-stage"><div class="scene-detail"></div><div class="portrait-large">🏚️</div><div class="dialogue-box"><div class="dialogue-name">The envelope under the door</div><div class="dialogue-text">“VELVET HOUSE was never meant to be one thing. Open a room. Make it useful. When all five lights are on, put the moon back above the door.”</div><div class="choice-list"><button class="choice" onclick="finishPrologue()">Okay. One room at a time.</button></div></div></div></div></section>`;
+  }
+}
+function finishPrologue(){currentScreen='mission';save();render();}
+
+// -------- MENU / SAVE --------
+function showMenu(){openModal(`${modalHead('SYSTEM','Velvet House Menu','The boring but necessary drawer.')}<div class="menu-list"><button onclick="endNight();closeModal()">🌘 End current night</button><button onclick="exportSave()">💾 Export save file</button><button onclick="document.getElementById('importFile').click()">📂 Import save file</button><button onclick="confirmReset()">🗑️ Reset campaign</button></div><input id="importFile" type="file" accept="application/json" hidden onchange="importSave(event)">`);}
+function exportSave(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`velvet-house-night-${state.day}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);toast('Save exported.');}
+function importSave(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{state=mergeState(freshState(),JSON.parse(r.result));save();closeModal();currentScreen='house';render();toast('Save imported.');}catch(err){toast('That file does not look like a Velvet House save.');}};r.readAsText(f);}
+function confirmReset(){if(confirm('Reset the entire Velvet House campaign? This cannot be undone unless you exported a save.')){localStorage.removeItem(SAVE_KEY);state=freshState();currentScreen='house';closeModal();render();}}
+
+// -------- EVENTS / HOOKS --------
+$('#homeBtn').addEventListener('click',()=>setScreen('house'));
+$('#chapterBtn').addEventListener('click',()=>setScreen('mission'));
+$('#journalBtn').addEventListener('click',()=>setScreen('journal'));
+$('#menuBtn').addEventListener('click',showMenu);
+$$('.mobile-dock button').forEach(b=>b.addEventListener('click',()=>setScreen(b.dataset.nav)));
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'&&!activeGame)closeModal();});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!activeGame)closeModal();});
+
+// expose functions for inline handlers
+Object.assign(window,{beginCampaign,setScreen,setRoom,startAction,endNight,startNextNight,setJournalTab,openPerson,abandonTalk,talkPick,sortPick,thriftPick,stylePick,scentStudyPick,pickBlendNote,blendToBalance,stopBlendMeter,bakeStep,bakeScale,bakeDone,budgetPick,cipherPick,fragmentPick,bossQuestionPick,bossScentPick,bossBakePick,festivalPick,closeModal,abandonGame,closeResultAndRender,closeDialogueResult,advanceChapter,finishCampaign,finishPrologue,showMenu,exportSave,importSave,confirmReset});
+render();

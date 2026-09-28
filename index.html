@@ -1,144 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#120c11" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<title>Velvet Hour: After Dark — Director's Cut</title>
-<link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d0910" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Velvet Hour — The House on Nocturne Street</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body data-scene="home">
-<div class="game-shell">
-  <aside class="rail-shell">
-    <div class="rail-brand"><div class="rail-logo">✦</div><div><b>VELVET HOUR</b><small>AFTER DARK</small></div></div>
-    <div class="rail-profile">
-      <div class="portrait-mini" id="railPortrait">M</div>
-      <div><b>Mak</b><small id="railLevel">Level 1</small></div>
-    </div>
-    <nav class="nav game-nav" id="nav"></nav>
-    <div class="rail-tip"><span>✦</span><small>Every night is a build. There is no wrong route.</small></div>
-  </aside>
-
-  <div class="app">
-    <header class="topbar hudbar">
-      <div class="hud-player">
-        <div class="portrait" id="playerPortrait"><span>✦</span></div>
-        <div class="hud-player-copy"><div class="eyebrow">NIGHT RUNNER</div><div class="hud-name">Mak <span id="hudLevel">Lv.1</span></div><div class="xp-track"><i id="hudXpBar"></i></div><div class="tiny muted" id="hudXpText">0 / 55 XP</div></div>
-      </div>
-      <div class="hud-clock">
-        <div class="eyebrow" id="hudWeekday">MONDAY • DAY 1</div>
-        <b id="hudPeriod">DUSK</b>
-        <div class="time-pips" id="timePips"><i></i><i></i><i></i><i></i></div>
+<body>
+  <div id="app" class="app-shell">
+    <header class="hud">
+      <button class="brand-button" id="homeBtn" aria-label="Return to house">
+        <span class="brand-mark">✦</span>
+        <span><b>VELVET HOUR</b><small>The House on Nocturne Street</small></span>
+      </button>
+      <div class="chapter-hud">
+        <div class="hud-label">CURRENT CHAPTER</div>
+        <button id="chapterBtn" class="chapter-button"><span id="chapterNumber">I</span><b id="chapterName">The Front Room</b></button>
+        <div class="chapter-progress"><i id="chapterBar"></i></div>
       </div>
       <div class="resources">
-        <div class="pill resource coin">🪙 <b id="coins">0</b></div>
-        <div class="pill resource energy">⚡ <b id="energy">0</b>/<span id="maxEnergy">0</span></div>
-        <div class="pill resource insp">💡 <b id="inspiration">0</b></div>
-        <div class="pill resource flow">🔥 <b id="flow">0</b>%</div>
-        <div class="pill resource vibe">💿 <b id="hudVibe">0</b></div><span id="day" hidden>1</span>
+        <div class="resource" title="Coins"><span>🪙</span><b id="coins">0</b></div>
+        <div class="resource" title="House reputation"><span>✦</span><b id="reputation">0</b></div>
+        <div class="resource actions-left" title="Actions left tonight"><span>☾</span><b id="actionsLeft">3</b></div>
       </div>
-      <div class="hud-actions">
-        <button id="nextBlockBtn" class="icon-btn" title="Advance time">⏳ <span>Advance</span></button>
-        <button id="sleepBtn" class="icon-btn danger-soft" title="End day">🌘 <span>End day</span></button>
-      </div>
+      <button id="journalBtn" class="hud-icon" aria-label="Open journal">📓</button>
+      <button id="menuBtn" class="hud-icon" aria-label="Open menu">☰</button>
     </header>
 
-    <section class="hero scene-hero" id="sceneHero">
-      <div class="scene-copy">
-        <div class="scene-kicker" id="sceneKicker">YOUR APARTMENT</div>
-        <h2 id="greeting">Velvet City is waking up.</h2>
-        <p id="heroText">Build a life after hours.</p>
-        <div class="scene-status" id="sceneStatus"></div>
-        <div class="hero-row"><button id="startBtn" class="btn gold">Enter Velvet City</button></div>
-      </div>
-      <div class="scene-art" id="sceneArt" aria-hidden="true"></div>
-    </section>
+    <main id="screen" class="screen"></main>
 
-    <div class="tabs" id="tabs" hidden></div>
-  <main>
-    <section class="view" data-view="home">
-      <div class="grid">
-        <div class="card span-8"><h3>🌙 Tonight</h3><div id="tonightSummary"></div><div class="divider"></div><div class="actions" id="homeActions"></div></div>
-        <div class="card span-4"><h3>📌 Daily quests</h3><div id="dailyQuests"></div><div class="divider"></div><h3>🗓️ Week quest</h3><div id="weeklyQuest"></div></div>
-        <div class="card span-7"><h3>💫 You, increasingly overpowered</h3><div class="statgrid" id="stats"></div><div class="divider"></div><div id="levelInfo" class="small muted"></div></div>
-        <div class="card span-5"><h3>📱 Messages</h3><div class="feed" id="messages"></div></div>
-        <div class="card span-12"><h3>🕰️ Recent chaos</h3><div class="feed" id="feed"></div></div>
-      </div>
-    </section>
-
-    <section class="view" data-view="city">
-      <div class="grid">
-        <div class="card span-4"><h3>🗺️ Velvet City</h3><div class="actions" id="districts"></div></div>
-        <div class="card span-8"><div id="districtTitle"><h3>Old Market</h3></div><p id="districtDesc" class="muted small"></p><div class="actions" id="cityActions"></div></div>
-        <div class="card span-12"><h3>🛍️ Rotating shop</h3><div class="shopgrid" id="shop"></div></div>
-      </div>
-    </section>
-
-    <section class="view" data-view="studio">
-      <div class="grid">
-        <div class="card span-12"><h3>🧪 Creative Studio</h3><div class="chips" id="studioTabs"></div></div>
-        <div class="card span-12" id="studioContent"></div>
-      </div>
-    </section>
-
-    <section class="view" data-view="style">
-      <div class="grid">
-        <div class="card span-5"><h3>🪩 Today's style challenge</h3><div id="styleChallenge"></div></div>
-        <div class="card span-7"><h3>🧷 Outfit board</h3><div class="slotgrid" id="outfitSlots"></div><div class="hero-row"><button class="btn" onclick="judgeOutfit()">Submit look</button><button class="btn secondary" onclick="clearOutfit()">Clear</button></div></div>
-        <div class="card span-12"><h3>👚 Wardrobe</h3><div class="inventory" id="wardrobe"></div></div>
-      </div>
-    </section>
-
-    <section class="view" data-view="apartment">
-      <div class="grid">
-        <div class="card span-4"><h3>🏠 Apartment</h3><div class="big-number" id="homeLevel">1</div><p class="muted small" id="homeLevelDesc"></p><button class="btn gold" id="upgradeHomeBtn" onclick="upgradeHome()">Upgrade</button></div>
-        <div class="card span-8"><h3>✨ Decor bonuses</h3><div class="slotgrid" id="decorSlots"></div></div>
-        <div class="card span-12"><h3>🪞 Decor collection</h3><div class="inventory" id="decorInventory"></div></div>
-        <div class="card span-6"><h3>🐕 Oakley HQ</h3><div id="oakley"></div></div>
-        <div class="card span-6"><h3>🐈 Cat jurisdiction</h3><div id="cat"></div></div>
-      </div>
-    </section>
-
-    <section class="view" data-view="people">
-      <div class="grid">
-        <div class="card span-7"><h3>💌 People of Velvet City</h3><div class="npcgrid" id="npcs"></div></div>
-        <div class="card span-5"><h3>📕 Ink & Ashes</h3><div class="meters"><span class="meter">✨ Spark <b id="spark">0</b></span><span class="meter">⚔️ Rivalry <b id="rivalry">0</b></span><span class="meter">🔎 Insight <b id="insight">0</b></span></div><div class="storybox" id="storyBox"></div></div>
-      </div>
-    </section>
-
-    <section class="view" data-view="progress">
-      <div class="grid">
-        <div class="card span-4"><h3>💿 Vibe Score</h3><div class="big-number" id="vibeScore">0</div><div class="bar"><i id="vibeBar"></i></div><p class="small muted" id="vibeDesc"></p></div>
-        <div class="card span-8"><h3>🧠 Skill board</h3><div id="skills"></div><div class="divider"></div><div><b>Perk points:</b> <span id="perkPoints">0</span></div><div class="cards" id="perks" style="margin-top:9px"></div></div>
-        <div class="card span-12"><h3>🎯 Action mastery</h3><p class="muted small">Every playable activity tracks your best score. High scores build Flow and improve rewards; there are no daily streak penalties.</p><div class="inventory" id="masteryBoard"></div></div><div class="card span-12"><h3>🏆 Achievements</h3><div class="inventory" id="achievements"></div></div>
-        <div class="card span-12"><h3>📦 Master collection</h3><div class="chips" id="collectionFilters"></div><div class="inventory" id="masterCollection" style="margin-top:10px"></div></div>
-      </div>
-    </section>
-
-    <section class="view" data-view="calendar">
-      <div class="grid">
-        <div class="card span-7"><h3>🗓️ 28-day season</h3><div id="calendarGrid" class="calendar"></div></div>
-        <div class="card span-5"><h3>🎟️ Upcoming events</h3><div id="upcomingEvents"></div></div>
-        <div class="card span-12"><h3>📜 Commissions</h3><p class="muted small">Optional jobs. They pay well because apparently Velvet City has an economy.</p><div class="cards" id="commissions"></div></div>
-      </div>
-    </section>
-
-    <section class="view" data-view="settings">
-      <div class="grid">
-        <div class="card span-6"><h3>💾 Save room</h3><p class="muted small">Autosaves locally. Export is useful before switching devices or making suspicious life choices.</p><div class="hero-row"><button class="btn secondary" onclick="exportSave()">Export save</button><button class="btn secondary" onclick="document.getElementById('importFile').click()">Import save</button><input hidden type="file" id="importFile" accept="application/json" /></div></div>
-        <div class="card span-6"><h3>🧨 Reset</h3><p class="muted small">Wipes this save on this browser. Export first if you're attached.</p><button class="btn ghost" onclick="resetGame()">Reset game</button></div>
-        <div class="card span-12"><h3>📱 App-ish mode</h3><p class="muted small">On iPhone/iPad, open in Safari → Share → Add to Home Screen. The game is fully offline and has no ads or purchases.</p></div>
-      </div>
-    </section>
-  </main>
-
-
-    <div class="footer">VELVET HOUR: AFTER DARK — DIRECTOR'S CUT • one world, many little obsessions</div>
+    <nav class="mobile-dock" aria-label="Game navigation">
+      <button data-nav="house" class="active"><span>🏚️</span><small>House</small></button>
+      <button data-nav="mission"><span>🎯</span><small>Mission</small></button>
+      <button data-nav="people"><span>💌</span><small>People</small></button>
+      <button data-nav="journal"><span>📓</span><small>Journal</small></button>
+    </nav>
   </div>
-</div>
-<div class="toast" id="toast"></div>
-<div class="modal" id="modal"><div class="modalbox"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
-<script src="game.js"></script>
+
+  <div id="modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div id="modalCard" class="modal-card"></div>
+  </div>
+  <div id="toast" class="toast"></div>
+
+  <script src="game.js"></script>
 </body>
 </html>

@@ -1,31 +1,59 @@
-# Velvet Hour: After Dark — Director's Cut
+# Velvet Hour — The House on Nocturne Street
 
-A cozy after-hours life-sim / RPG built as a static web game for GitHub Pages.
+A campaign-first cozy puzzle RPG built as a static site for GitHub Pages.
 
-## Files
-- `index.html` — game shell and screens
-- `styles.css` — full UI, map, scenes, responsive layout, minigame themes
-- `game.js` — save system, progression, story, minigames, night builds, world logic
+## What changed in the overhaul
 
-## Deploy on GitHub Pages
-1. Back up/export your current Velvet Hour save if you want an extra safety copy.
-2. Replace the old game files in your GitHub Pages repo with the files in this folder.
-3. Commit and push.
-4. If Pages uses the repository root, make sure `index.html` is at the root. If Pages uses `/docs`, put all three files in `/docs` instead.
-5. Open the same GitHub Pages URL and hard-refresh if the old CSS is cached.
+The earlier Velvet Hour builds had a lot of systems, but they were too flat and too available at once. This version is organized around one clear campaign:
 
-The game keeps the existing `velvetHourMak_v2` localStorage save key, so deploying this over the Arcade Cut at the same domain/path should preserve the current save in that browser.
+1. Restore **The Front Room**
+2. Build **The Scent Bar**
+3. Open **The Night Kitchen**
+4. Solve **The Locked Archive**
+5. Host **The Moonlight Opening**
 
-## Director's Cut additions
-- One navigation system: left game rail on desktop, bottom dock + More drawer on mobile
-- RPG-style HUD with level/XP, time blocks, resources, Flow, and Vibe
-- Scene art and distinct screen identities instead of one repeated dashboard look
-- Visual Velvet City overworld with unlockable district nodes
-- Themed minigame rooms (perfume, skincare, archive, arcade, baking, shopping, social, pets)
-- Unique room stages for Studio, Style, Apartment, People, Progress, and Calendar
-- Night Intent builds with temporary bonuses
-- End-of-night results screen and rank
-- Quest progress bars, richer rarity styling, animated results, and improved mobile layout
+Each chapter:
+- introduces one room at a time;
+- gives a short objective list with a visible recommended next action;
+- uses minigames to advance specific objectives;
+- ends in a chapter-finale challenge;
+- unlocks the next room, NPC, and keepsake.
 
-## No build tools required
-There is no npm, framework, backend, API key, or dependency. GitHub Pages can serve these files directly.
+There are only four permanent navigation areas: **House, Mission, People, Journal**. Everything else exists inside the house as gameplay rather than as competing app screens.
+
+## Core loop
+
+- Start each night with 3 actions.
+- Follow the recommended chapter objective or choose another objective from the same chapter.
+- Every action is a mental minigame: sorting, deduction, styling logic, fragrance classification, formula balancing, recipe sequencing, fraction math, costing, pattern recognition, or dialogue reasoning.
+- B-rank or better advances most chapter objectives.
+- End the night whenever you want; there is no streak or deadline punishment.
+- Finish all chapter objectives to unlock the finale.
+
+## GitHub Pages deployment
+
+Upload these files to the same folder in your repository:
+
+- `index.html`
+- `styles.css`
+- `game.js`
+
+Then enable GitHub Pages for that branch/folder if it is not already enabled. There is no npm install, framework, build step, backend, or external dependency.
+
+## Saves
+
+The new campaign uses localStorage key:
+
+`velvetHouse_nocturne_v1`
+
+This is intentionally separate from the older Arcade/Director's Cut save because the progression model was rebuilt. If an older `velvetHourMak_v2` save exists in the same browser/domain, a small **Legacy Trunk** gift is detected at the beginning, but the old progression is not forced into the new campaign structure.
+
+The in-game menu includes JSON save export/import.
+
+## Testing performed
+
+- JavaScript syntax validation with Node.
+- Static validation that every inline click handler points to a defined function.
+- Automated logic smoke test that completes all five campaign chapters, every chapter finale, and the Moonlight Opening using correct solutions.
+- Browser render tests at desktop and 390px mobile widths with no page errors using an injected Chromium test harness.
+
